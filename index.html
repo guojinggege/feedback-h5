@@ -608,10 +608,149 @@
     font-style: italic;
   }
 
+  /* === Filter chips === */
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: 2px calc(var(--safe-right) + 18px) 14px calc(var(--safe-left) + 18px);
+    margin: 0 calc(0px - var(--safe-right) - 18px) 0 calc(0px - var(--safe-left) - 18px);
+    scrollbar-width: none;
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .filter-chip {
+    flex-shrink: 0;
+    appearance: none;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 7px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    letter-spacing: 0.02em;
+    transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  }
+  .filter-chip:active { transform: scale(0.96); }
+  .filter-chip.active {
+    background: var(--danger);
+    color: #fff;
+    border-color: var(--danger);
+    font-weight: 600;
+  }
+
+  /* === Card title row + category tag === */
+  .card-head { padding: 14px 16px 4px; }
+  .card-title-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 0 16px 12px;
+  }
+  .card-title {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: 19px;
+    line-height: 1.32;
+    letter-spacing: -0.012em;
+    color: var(--ink);
+    word-break: break-word;
+    font-variation-settings: "opsz" 24;
+  }
+  .card-title.empty {
+    color: var(--ink-muted);
+    font-weight: 500;
+    font-style: italic;
+  }
+  .cat-tag {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    letter-spacing: 0.03em;
+    margin-top: 4px;
+    white-space: nowrap;
+  }
+  .cat-tag.red     { background: #f0d8d4; color: #a04438; }
+  .cat-tag.green   { background: #dde6d2; color: #5d7a4a; }
+  .cat-tag.blue    { background: #d9e0e6; color: #4a6478; }
+  .cat-tag.amber   { background: #ebdcb8; color: #7a5a25; }
+  .cat-tag.neutral { background: #e8dec7; color: #6f6452; }
+
+  /* === Form modal: title + category meta row === */
+  .meta-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .title-input {
+    width: 100%;
+    border: 1px solid var(--line);
+    background: var(--card-elev);
+    border-radius: var(--radius-sm);
+    padding: 11px 13px;
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 17px;
+    line-height: 1.4;
+    color: var(--ink);
+    outline: none;
+    -webkit-appearance: none;
+    transition: border 0.15s ease, box-shadow 0.15s ease;
+  }
+  .title-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(138, 109, 59, 0.12);
+  }
+  .title-input::placeholder {
+    color: #b8ad99;
+    font-family: var(--mono);
+    font-weight: 400;
+    font-size: 14px;
+  }
+  .cat-select {
+    width: 100%;
+    border: 1px solid var(--line);
+    background-color: var(--card-elev);
+    border-radius: var(--radius-sm);
+    padding: 11px 34px 11px 13px;
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'><path d='M1 1L6 6L11 1' stroke='%237a6f60' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    cursor: pointer;
+  }
+  .cat-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(138, 109, 59, 0.12);
+  }
+  @media (min-width: 420px) {
+    .meta-row { flex-direction: row; align-items: stretch; }
+    .title-input { flex: 1; min-width: 0; }
+    .cat-select { flex: 0 0 130px; width: 130px; }
+  }
+
   /* small screens */
   @media (max-width: 360px) {
     .app-title { font-size: 24px; }
     .icon-btn { padding: 8px 10px; font-size: 11px; }
+    .card-title { font-size: 17px; }
   }
 </style>
 </head>
@@ -637,6 +776,7 @@
 </header>
 
 <main>
+  <div id="filter-bar" class="filter-bar" hidden></div>
   <div id="feedback-list" class="feedback-list"></div>
   <div id="empty-state" class="empty-state" hidden>
     <div class="emoji">¶</div>
@@ -665,6 +805,13 @@
     <button class="form-close" id="form-close" aria-label="关闭">×</button>
   </header>
   <div class="form-modal-body">
+    <section class="section">
+      <div class="section-label"><span class="dot dot-problem"></span> 标题 / 类型 <span class="required">标题必填</span></div>
+      <div class="meta-row">
+        <input type="text" id="form-title" class="title-input" placeholder="简要概括这个问题…" maxlength="80" />
+        <select id="form-category" class="cat-select" aria-label="类型"></select>
+      </div>
+    </section>
     <section class="section">
       <div class="section-label"><span class="dot dot-media"></span> 截图 / 视频</div>
       <div class="media-grid" id="form-media-grid"></div>
@@ -702,7 +849,23 @@
   const STORAGE_KEY = 'feedback-h5-v1';
   const MAX_FILE_BYTES = 8 * 1024 * 1024; // 8MB per file, to keep localStorage usable
 
-  /** @type {{ id: string; media: { id: string; name: string; type: string; dataUrl: string }[]; problem: string; solution: string; createdAt: number }[]} */
+  const CATEGORIES = [
+    '年排名', '拓展', 'bug', '闪退', '优化建议',
+    '上架', '下架', '验证码', '素材',
+    '批量操作', '筛选', '编辑', '数据看板', '查询',
+    '展示', '广告位', '客户名称',
+    '广告类型', '功能设置', '其他'
+  ];
+  const DEFAULT_CATEGORY = '其他';
+  const CATEGORY_COLOR = {
+    'bug': 'red', '闪退': 'red',
+    '优化建议': 'green', '功能设置': 'green',
+    '拓展': 'blue', '上架': 'blue', '下架': 'blue', '编辑': 'blue', '批量操作': 'blue', '筛选': 'blue',
+    '年排名': 'amber', '数据看板': 'amber', '查询': 'amber', '展示': 'amber', '广告位': 'amber', '广告类型': 'amber', '客户名称': 'amber',
+    '验证码': 'neutral', '素材': 'neutral', '其他': 'neutral'
+  };
+
+  let activeFilter = 'all';
   let state = load();
 
   // === Storage ===
@@ -711,7 +874,16 @@
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return [];
       const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map(it => ({
+        id: typeof it.id === 'string' ? it.id : uid(),
+        title: typeof it.title === 'string' ? it.title : '',
+        category: typeof it.category === 'string' && it.category ? it.category : DEFAULT_CATEGORY,
+        media: Array.isArray(it.media) ? it.media : [],
+        problem: typeof it.problem === 'string' ? it.problem : '',
+        solution: typeof it.solution === 'string' ? it.solution : '',
+        createdAt: typeof it.createdAt === 'number' ? it.createdAt : Date.now()
+      }));
     } catch (e) {
       console.warn('load failed', e);
       return [];
@@ -735,27 +907,88 @@
   const listEl = document.getElementById('feedback-list');
   const emptyEl = document.getElementById('empty-state');
   const countEl = document.getElementById('count-badge');
+  const filterBarEl = document.getElementById('filter-bar');
+  const emptyTitleEl = emptyEl.querySelector('h2');
+  const emptyDescEl = emptyEl.querySelector('p');
+
+  function getCategoryOf(item) {
+    return (item.category && CATEGORIES.includes(item.category)) ? item.category : DEFAULT_CATEGORY;
+  }
+
+  function getUsedCategories() {
+    const seen = new Set(state.map(getCategoryOf));
+    return CATEGORIES.filter(c => seen.has(c));
+  }
+
+  function getVisibleItems() {
+    if (activeFilter === 'all') return state;
+    return state.filter(it => getCategoryOf(it) === activeFilter);
+  }
+
+  function renderFilterBar() {
+    const used = getUsedCategories();
+    if (used.length === 0) {
+      filterBarEl.innerHTML = '';
+      filterBarEl.hidden = true;
+      return;
+    }
+    filterBarEl.hidden = false;
+    const chips = [{ key: 'all', label: '全部' }, ...used.map(c => ({ key: c, label: c }))];
+    filterBarEl.innerHTML = chips.map(c =>
+      `<button class="filter-chip${activeFilter === c.key ? ' active' : ''}" data-filter="${escapeAttr(c.key)}">${escapeAttr(c.label)}</button>`
+    ).join('');
+    filterBarEl.querySelectorAll('[data-filter]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeFilter = btn.dataset.filter;
+        render();
+      });
+    });
+  }
 
   function render() {
     countEl.textContent = state.length + ' 条';
+    // Reset filter if current selection no longer has any items
+    if (activeFilter !== 'all' && !state.some(it => getCategoryOf(it) === activeFilter)) {
+      activeFilter = 'all';
+    }
+    renderFilterBar();
+    const visible = getVisibleItems();
     if (state.length === 0) {
       listEl.innerHTML = '';
+      emptyTitleEl.textContent = '还没有反馈';
+      emptyDescEl.textContent = '点击下方按钮添加第一条';
+      emptyEl.hidden = false;
+      return;
+    }
+    if (visible.length === 0) {
+      listEl.innerHTML = '';
+      emptyTitleEl.textContent = '当前类型下还没有反馈';
+      emptyDescEl.textContent = '试试切换上方的「全部」筛选';
       emptyEl.hidden = false;
       return;
     }
     emptyEl.hidden = true;
-    listEl.innerHTML = state.map((item, i) => renderCard(item, i)).join('');
+    listEl.innerHTML = visible.map(item => renderCard(item, state.indexOf(item))).join('');
     bindCardEvents();
   }
 
   function renderCard(item, i) {
     const hasProblem = item.problem && item.problem.trim();
     const hasSolution = item.solution && item.solution.trim();
+    const title = (item.title || '').trim();
+    const category = getCategoryOf(item);
+    const titleDisplay = title || '未命名反馈';
+    const titleEmptyClass = title ? '' : ' empty';
+    const colorClass = CATEGORY_COLOR[category] || 'neutral';
     return `
       <article class="card" data-id="${item.id}">
         <div class="card-head">
           <div class="card-index">No.${String(i + 1).padStart(2, '0')} <span>${formatTime(item.createdAt)}</span></div>
           <button class="card-delete" data-action="delete-card">删除</button>
+        </div>
+        <div class="card-title-row">
+          <h3 class="card-title${titleEmptyClass}">${escapeAttr(titleDisplay)}</h3>
+          <span class="cat-tag ${colorClass}">${escapeAttr(category)}</span>
         </div>
 
         <section class="section">
@@ -905,11 +1138,20 @@
   const formMask = document.getElementById('form-mask');
   const formModal = document.getElementById('form-modal');
   const formMediaGrid = document.getElementById('form-media-grid');
+  const formTitle = document.getElementById('form-title');
+  const formCategory = document.getElementById('form-category');
   const formProblem = document.getElementById('form-problem');
   const formSolution = document.getElementById('form-solution');
 
+  // Populate category select once.
+  formCategory.innerHTML = CATEGORIES.map(c =>
+    `<option value="${escapeAttr(c)}"${c === DEFAULT_CATEGORY ? ' selected' : ''}>${escapeAttr(c)}</option>`
+  ).join('');
+
   function openForm() {
     draft = { media: [] };
+    formTitle.value = '';
+    formCategory.value = DEFAULT_CATEGORY;
     formProblem.value = '';
     formSolution.value = '';
     renderFormMedia();
@@ -928,8 +1170,10 @@
 
   function formIsDirty() {
     return draft.media.length > 0
+      || formTitle.value.trim().length > 0
       || formProblem.value.trim().length > 0
-      || formSolution.value.trim().length > 0;
+      || formSolution.value.trim().length > 0
+      || formCategory.value !== DEFAULT_CATEGORY;
   }
 
   function attemptCloseForm() {
@@ -941,14 +1185,23 @@
   }
 
   function submitForm() {
+    const title = formTitle.value.trim();
     const problem = formProblem.value.trim();
+    if (!title) {
+      toast('请填写问题标题');
+      formTitle.focus();
+      return;
+    }
     if (!problem) {
       toast('请填写问题描述');
       formProblem.focus();
       return;
     }
+    const category = CATEGORIES.includes(formCategory.value) ? formCategory.value : DEFAULT_CATEGORY;
     state.push({
       id: uid(),
+      title,
+      category,
       media: draft.media.slice(),
       problem,
       solution: formSolution.value.trim(),
@@ -1070,7 +1323,9 @@
     lines.push(`> 生成于 ${formatTime(now.getTime())} · 共 ${items.length} 条`);
     lines.push('');
     items.forEach((item, i) => {
-      lines.push(`## No.${String(i + 1).padStart(2, '0')}`);
+      const title = (item.title || '').trim() || '未命名反馈';
+      const category = getCategoryOf(item);
+      lines.push(`## No.${String(i + 1).padStart(2, '0')} · [${category}] ${title}`);
       lines.push('');
       lines.push(`*${formatTime(item.createdAt)}*`);
       lines.push('');

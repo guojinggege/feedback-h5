@@ -13,7 +13,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23f5efe1'/%3E%3Ctext x='50%25' y='54%25' font-family='Georgia,serif' font-size='38' text-anchor='middle' dominant-baseline='middle' fill='%23b8504a'%3EF%3C/text%3E%3C/svg%3E" />
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23f5efe1'/%3E%3Ctext x='50%25' y='56%25' font-family='Georgia,serif' font-size='108' text-anchor='middle' dominant-baseline='middle' fill='%23b8504a'%3EF%3C/text%3E%3C/svg%3E" />
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
   :root {
@@ -772,89 +771,10 @@
   .sheet-actions.sheet-actions-stack .sheet-btn { flex: 0 0 auto; width: 100%; }
   .sheet-actions + .sheet-actions { margin-top: 8px; }
 
-  /* === Banner (legacy migration / network errors) === */
-  .banner {
-    margin: 0 0 14px;
-    padding: 12px 14px;
-    border-radius: 12px;
-    font-family: var(--mono);
-    font-size: 12.5px;
-    line-height: 1.55;
-    border: 1px solid transparent;
-    word-break: break-word;
-  }
-  .banner.warn {
-    background: #f3e6cb;
-    color: #7a5a25;
-    border-color: #e6d4ac;
-    cursor: pointer;
-  }
-  .banner.error {
-    background: #f0d8d4;
-    color: #a04438;
-    border-color: #e0c4be;
-  }
-  .banner.info {
-    background: var(--card);
-    color: var(--ink);
-    border-color: var(--line);
-  }
-  .banner:active.warn { opacity: 0.85; }
-
-  /* === Spin animation for refresh button === */
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  .icon-btn .spin-target {
-    transition: transform 0.2s ease;
-  }
-  .icon-btn.spinning .spin-target {
-    animation: spin 0.9s linear infinite;
-  }
-  .icon-btn:disabled,
-  .icon-btn.spinning {
-    opacity: 0.65;
-    pointer-events: none;
-  }
-  .icon-btn .btn-text { display: inline; }
-
-  /* === Media uploading state === */
-  .media-add.uploading {
-    opacity: 0.5;
-    pointer-events: none;
-    position: relative;
-  }
-  .media-add.uploading::after {
-    content: '…';
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    color: var(--accent);
-  }
-  .media-tile.uploading::before {
-    content: '上传中';
-    position: absolute;
-    inset: 0;
-    background: rgba(20, 16, 10, 0.55);
-    color: #fff;
-    font-family: var(--mono);
-    font-size: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-    letter-spacing: 0.06em;
-  }
-
   /* small screens */
   @media (max-width: 360px) {
     .app-title { font-size: 24px; }
     .icon-btn { padding: 8px 10px; font-size: 11px; }
-    .icon-btn .btn-text { display: none; }
     .card-title { font-size: 17px; }
   }
 </style>
@@ -868,10 +788,6 @@
       <div class="app-subtitle"><span id="meta-info">已记录 0 条 · 约 0 MB</span></div>
     </div>
     <div class="header-actions">
-      <button class="icon-btn" id="btn-refresh" aria-label="刷新">
-        <svg class="spin-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 4 21 10 15 10"/></svg>
-        <span class="btn-text">刷新</span>
-      </button>
       <button class="icon-btn" id="btn-export" aria-label="导出 / 备份">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         导出
@@ -885,7 +801,6 @@
 </header>
 
 <main>
-  <div id="banner" class="banner" hidden></div>
   <div id="filter-bar" class="filter-bar" hidden></div>
   <div id="feedback-list" class="feedback-list"></div>
   <div id="empty-state" class="empty-state" hidden>
@@ -970,29 +885,13 @@
 
 <script>
 (() => {
-  const SUPABASE_URL = 'https://acembjwiyrmoyzlsxvsh.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_lj9wNFRdPN_BXiMqsMa2-g_nVowbuQv';
-  const STORAGE_BUCKET = 'feedback-media';
-  const TABLE_NAME = 'feedbacks';
-
-  const LEGACY_IDB_NAME = 'feedback-h5-db';
-  const LEGACY_IDB_STORE = 'feedbacks';
-
+  const LS_LEGACY_KEY = 'feedback-h5-v1';
+  const DB_NAME = 'feedback-h5-db';
+  const DB_VERSION = 1;
+  const STORE_NAME = 'feedbacks';
   const VIDEO_WARN_BYTES = 50 * 1024 * 1024; // 50MB
   const IMG_MAX_DIM = 1920;
   const IMG_QUALITY = 0.85;
-
-  let supabase = null;
-  let supabaseInitError = null;
-  try {
-    if (window.supabase && typeof window.supabase.createClient === 'function') {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    } else {
-      supabaseInitError = 'Supabase SDK 未加载';
-    }
-  } catch (e) {
-    supabaseInitError = e?.message || String(e);
-  }
 
   const CATEGORIES = [
     '排名', '拓展', 'bug', '闪退', '优化建议',
@@ -1013,165 +912,89 @@
   let activeFilter = 'all';
   let editingId = null;
   let state = [];
-  let isLoadingRemote = false;
 
   function uid() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
 
-  function sanitizeFilename(name) {
-    const base = (typeof name === 'string' && name ? name : 'file').trim();
-    // Collapse any non word/dot/dash to "_". Limit length to keep paths short.
-    return base.replace(/[^\w.\-]/g, '_').slice(0, 80) || 'file';
-  }
-
-  // === Media helpers (new cloud shape: { id, type:'image'|'video', url, path, name }) ===
-  function mediaIsVideo(m) {
-    if (!m) return false;
-    if (m.type === 'video') return true;
-    return typeof m.type === 'string' && m.type.startsWith('video/');
-  }
-  function mediaSrc(m) {
-    return (m && (m.url || m.dataUrl)) || '';
-  }
-
-  // === DB row mappers (front camelCase <-> DB snake_case) ===
-  function toDbRow(item) {
-    return {
-      id: item.id,
-      title: item.title || '',
-      category: item.category || DEFAULT_CATEGORY,
-      description: item.problem || '',
-      solution: item.solution || '',
-      media: Array.isArray(item.media) ? item.media : [],
-      created_at: new Date(item.createdAt || Date.now()).toISOString(),
-      updated_at: new Date().toISOString()
-    };
-  }
-  function fromDbRow(row) {
-    return {
-      id: row.id,
-      title: row.title || '',
-      category: row.category || DEFAULT_CATEGORY,
-      media: Array.isArray(row.media) ? row.media : [],
-      problem: row.description || '',
-      solution: row.solution || '',
-      createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now()
-    };
-  }
-
-  // === Supabase wrappers ===
-  function _assertCloud() {
-    if (!supabase) throw new Error(supabaseInitError || 'Supabase 未初始化');
-  }
-  async function cloudGetAll() {
-    _assertCloud();
-    const { data, error } = await supabase
-      .from(TABLE_NAME)
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    return (data || []).map(fromDbRow);
-  }
-  async function cloudUpsert(item) {
-    _assertCloud();
-    const { error } = await supabase.from(TABLE_NAME).upsert(toDbRow(item));
-    if (error) throw error;
-  }
-  async function cloudUpsertMany(items) {
-    _assertCloud();
-    if (!items.length) return;
-    const { error } = await supabase.from(TABLE_NAME).upsert(items.map(toDbRow));
-    if (error) throw error;
-  }
-  async function cloudDelete(id) {
-    _assertCloud();
-    const { error } = await supabase.from(TABLE_NAME).delete().eq('id', id);
-    if (error) throw error;
-  }
-  async function cloudClear() {
-    _assertCloud();
-    const { error } = await supabase.from(TABLE_NAME).delete().neq('id', '__never_match__');
-    if (error) throw error;
-  }
-
-  // === Storage wrappers ===
-  async function storageUpload(feedbackId, fileOrBlob, originalName, mimeHint) {
-    _assertCloud();
-    const ts = Date.now();
-    const safe = sanitizeFilename(originalName);
-    const path = `${feedbackId}/${ts}-${Math.random().toString(36).slice(2, 6)}-${safe}`;
-    const opts = { contentType: fileOrBlob.type || mimeHint || 'application/octet-stream', upsert: false };
-    const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, fileOrBlob, opts);
-    if (error) throw error;
-    const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
-    return { url: data.publicUrl, path };
-  }
-  async function storageRemove(paths) {
-    if (!supabase) return;
-    const valid = (paths || []).filter(p => typeof p === 'string' && p);
-    if (valid.length === 0) return;
-    const { error } = await supabase.storage.from(STORAGE_BUCKET).remove(valid);
-    if (error) throw error;
-  }
-
-  // === Legacy IndexedDB detection (read-only; used to prompt user to import) ===
-  async function legacyIDBCount() {
-    if (!('indexedDB' in window)) return 0;
-    try {
-      if (typeof indexedDB.databases === 'function') {
-        const dbs = await indexedDB.databases();
-        if (!dbs.some(d => d.name === LEGACY_IDB_NAME)) return 0;
-      }
-    } catch (_) { /* fall through */ }
-    return new Promise((resolve) => {
-      let settled = false;
-      const finish = (n) => { if (!settled) { settled = true; resolve(n); } };
-      let req;
-      try {
-        req = indexedDB.open(LEGACY_IDB_NAME);
-      } catch (e) { return finish(0); }
-      req.onerror = () => finish(0);
-      req.onsuccess = () => {
-        const db = req.result;
-        if (!db.objectStoreNames.contains(LEGACY_IDB_STORE)) {
-          db.close();
-          return finish(0);
-        }
-        try {
-          const t = db.transaction(LEGACY_IDB_STORE, 'readonly');
-          const r = t.objectStore(LEGACY_IDB_STORE).count();
-          r.onsuccess = () => { db.close(); finish(r.result || 0); };
-          r.onerror = () => { db.close(); finish(0); };
-        } catch (e) {
-          db.close(); finish(0);
+  // === IndexedDB ===
+  let _dbPromise = null;
+  function getDB() {
+    if (_dbPromise) return _dbPromise;
+    _dbPromise = new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME, { keyPath: 'id' });
         }
       };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+      req.onblocked = () => reject(new Error('数据库被阻塞'));
     });
+    return _dbPromise;
   }
-  async function legacyIDBGetAll() {
-    if (!('indexedDB' in window)) return [];
-    return new Promise((resolve) => {
-      const req = indexedDB.open(LEGACY_IDB_NAME);
-      req.onerror = () => resolve([]);
-      req.onsuccess = () => {
-        const db = req.result;
-        if (!db.objectStoreNames.contains(LEGACY_IDB_STORE)) {
-          db.close(); return resolve([]);
-        }
-        const t = db.transaction(LEGACY_IDB_STORE, 'readonly');
-        const r = t.objectStore(LEGACY_IDB_STORE).getAll();
-        r.onsuccess = () => { db.close(); resolve(r.result || []); };
-        r.onerror = () => { db.close(); resolve([]); };
-      };
-    });
-  }
-  async function clearLegacyIDB() {
+
+  async function dbGet(id) {
+    const db = await getDB();
     return new Promise((res, rej) => {
-      const req = indexedDB.deleteDatabase(LEGACY_IDB_NAME);
-      req.onsuccess = () => res();
-      req.onerror = () => rej(req.error);
-      req.onblocked = () => rej(new Error('数据库被阻塞，请关闭其他打开本页的标签后重试'));
+      const t = db.transaction(STORE_NAME, 'readonly');
+      const r = t.objectStore(STORE_NAME).get(id);
+      r.onsuccess = () => res(r.result);
+      t.onerror = () => rej(t.error);
+      t.onabort = () => rej(t.error);
+    });
+  }
+  async function dbGetAll() {
+    const db = await getDB();
+    return new Promise((res, rej) => {
+      const t = db.transaction(STORE_NAME, 'readonly');
+      const r = t.objectStore(STORE_NAME).getAll();
+      r.onsuccess = () => res(r.result || []);
+      t.onerror = () => rej(t.error);
+      t.onabort = () => rej(t.error);
+    });
+  }
+  async function dbPut(item) {
+    const db = await getDB();
+    return new Promise((res, rej) => {
+      const t = db.transaction(STORE_NAME, 'readwrite');
+      t.objectStore(STORE_NAME).put(item);
+      t.oncomplete = () => res();
+      t.onerror = () => rej(t.error);
+      t.onabort = () => rej(t.error);
+    });
+  }
+  async function dbPutMany(items) {
+    const db = await getDB();
+    return new Promise((res, rej) => {
+      const t = db.transaction(STORE_NAME, 'readwrite');
+      const store = t.objectStore(STORE_NAME);
+      items.forEach(it => store.put(it));
+      t.oncomplete = () => res();
+      t.onerror = () => rej(t.error);
+      t.onabort = () => rej(t.error);
+    });
+  }
+  async function dbDelete(id) {
+    const db = await getDB();
+    return new Promise((res, rej) => {
+      const t = db.transaction(STORE_NAME, 'readwrite');
+      t.objectStore(STORE_NAME).delete(id);
+      t.oncomplete = () => res();
+      t.onerror = () => rej(t.error);
+      t.onabort = () => rej(t.error);
+    });
+  }
+  async function dbClear() {
+    const db = await getDB();
+    return new Promise((res, rej) => {
+      const t = db.transaction(STORE_NAME, 'readwrite');
+      t.objectStore(STORE_NAME).clear();
+      t.oncomplete = () => res();
+      t.onerror = () => rej(t.error);
+      t.onabort = () => rej(t.error);
     });
   }
 
@@ -1182,24 +1005,16 @@
     return CATEGORIES.includes(cat) ? cat : DEFAULT_CATEGORY;
   }
 
-  // Accept both old (dataUrl, MIME type) and new (url, path, simplified type) media shapes.
   function normalizeMedia(m) {
     if (!m || typeof m !== 'object') return null;
-    const url = typeof m.url === 'string' ? m.url : '';
     const dataUrl = typeof m.dataUrl === 'string' ? m.dataUrl : '';
-    if (!url && !dataUrl) return null;
-    let type = 'image';
-    if (m.type === 'video' || (typeof m.type === 'string' && m.type.startsWith('video/'))) type = 'video';
-    else if (m.type === 'image' || (typeof m.type === 'string' && m.type.startsWith('image/'))) type = 'image';
-    const out = {
+    if (!dataUrl) return null;
+    return {
       id: typeof m.id === 'string' && m.id ? m.id : uid(),
-      type,
       name: typeof m.name === 'string' ? m.name : '',
-      url,
-      path: typeof m.path === 'string' ? m.path : ''
+      type: typeof m.type === 'string' ? m.type : 'application/octet-stream',
+      dataUrl
     };
-    if (!url && dataUrl) out.dataUrl = dataUrl; // preserved for import-time re-upload
-    return out;
   }
 
   // Accepts both internal shape (problem) and import shape (description).
@@ -1216,10 +1031,34 @@
       media,
       problem,
       solution: typeof it.solution === 'string' ? it.solution : '',
-      createdAt: typeof it.createdAt === 'number'
-        ? it.createdAt
-        : (typeof it.created_at === 'string' ? new Date(it.created_at).getTime() : Date.now())
+      createdAt: typeof it.createdAt === 'number' ? it.createdAt : Date.now()
     };
+  }
+
+  async function migrateFromLocalStorage() {
+    const raw = localStorage.getItem(LS_LEGACY_KEY);
+    if (!raw) return;
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      toast('旧数据迁移失败：JSON 解析错误');
+      console.warn('legacy parse failed', e);
+      return;
+    }
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      localStorage.removeItem(LS_LEGACY_KEY);
+      return;
+    }
+    const items = parsed.map(normalizeItem);
+    try {
+      await dbPutMany(items);
+      localStorage.removeItem(LS_LEGACY_KEY);
+      toast(`已迁移 ${items.length} 条旧数据到 IndexedDB`);
+    } catch (e) {
+      toast('旧数据迁移失败：' + (e?.message || e));
+      console.warn('migration failed', e);
+    }
   }
 
   // === Render ===
@@ -1227,45 +1066,25 @@
   const emptyEl = document.getElementById('empty-state');
   const metaInfoEl = document.getElementById('meta-info');
   const filterBarEl = document.getElementById('filter-bar');
-  const bannerEl = document.getElementById('banner');
   const emptyTitleEl = emptyEl.querySelector('h2');
   const emptyDescEl = emptyEl.querySelector('p');
 
-  function countMedia() {
-    let n = 0;
-    state.forEach(it => { n += (it.media || []).length; });
-    return n;
+  function estimateSizeMB() {
+    let bytes = 0;
+    state.forEach(it => {
+      bytes += (it.title?.length || 0)
+            + (it.problem?.length || 0)
+            + (it.solution?.length || 0)
+            + (it.category?.length || 0);
+      (it.media || []).forEach(m => {
+        bytes += (m.dataUrl?.length || 0) + (m.name?.length || 0);
+      });
+    });
+    return (bytes / 1024 / 1024).toFixed(1);
   }
 
   function updateMetaInfo() {
-    const mediaCount = countMedia();
-    metaInfoEl.textContent = `已记录 ${state.length} 条 · ${mediaCount} 个媒体 · 云端`;
-  }
-
-  // === Banner ===
-  let _bannerOnClick = null;
-  function showBanner({ text, variant = 'info', onClick = null }) {
-    bannerEl.textContent = text;
-    bannerEl.className = 'banner ' + variant;
-    bannerEl.hidden = false;
-    _bannerOnClick = onClick;
-  }
-  function hideBanner() {
-    bannerEl.hidden = true;
-    bannerEl.className = 'banner';
-    bannerEl.textContent = '';
-    _bannerOnClick = null;
-  }
-  bannerEl.addEventListener('click', () => {
-    if (typeof _bannerOnClick === 'function') _bannerOnClick();
-  });
-
-  // === Loading state (initial bootstrap) ===
-  function showLoadingState() {
-    listEl.innerHTML = '';
-    emptyTitleEl.textContent = '加载中…';
-    emptyDescEl.textContent = '正在从云端获取最新反馈';
-    emptyEl.hidden = false;
+    metaInfoEl.textContent = `已记录 ${state.length} 条 · 约 ${estimateSizeMB()} MB`;
   }
 
   function getCategoryOf(item) {
@@ -1374,10 +1193,10 @@
   }
 
   function renderTileReadonly(m) {
-    const src = mediaSrc(m);
-    const inner = mediaIsVideo(m)
-      ? `<video src="${src}" muted playsinline preload="metadata"></video><span class="video-badge">VIDEO</span>`
-      : `<img src="${src}" alt="${escapeAttr(m.name || '')}" loading="lazy" />`;
+    const isVideo = m.type.startsWith('video/');
+    const inner = isVideo
+      ? `<video src="${m.dataUrl}" muted playsinline></video><span class="video-badge">VIDEO</span>`
+      : `<img src="${m.dataUrl}" alt="${escapeAttr(m.name)}" loading="lazy" />`;
     return `
       <div class="media-tile" data-action="preview-media" data-media-id="${m.id}">
         ${inner}
@@ -1411,17 +1230,11 @@
 
       cardEl.querySelector('[data-action="delete-card"]').addEventListener('click', () => {
         confirmSheet('删除这条反馈？', '该条目下的截图、文字将一并移除，且无法恢复。', async () => {
-          const item = state.find(it => it.id === id);
-          const paths = (item?.media || []).map(m => m.path).filter(Boolean);
           try {
-            await cloudDelete(id);
+            await dbDelete(id);
           } catch (e) {
             toast('删除失败：' + (e?.message || e));
             return;
-          }
-          // Best-effort: remove associated storage files. Don't block UI on failure.
-          if (paths.length > 0) {
-            storageRemove(paths).catch(err => console.warn('storage cleanup failed', err));
           }
           state = state.filter(it => it.id !== id);
           render();
@@ -1455,11 +1268,11 @@
   const modalContent = document.getElementById('modal-content');
 
   function openPreview(media) {
-    const src = mediaSrc(media);
-    modalContent.innerHTML = mediaIsVideo(media)
-      ? `<video src="${src}" controls autoplay playsinline></video>
+    const isVideo = media.type.startsWith('video/');
+    modalContent.innerHTML = isVideo
+      ? `<video src="${media.dataUrl}" controls autoplay playsinline></video>
          <button class="modal-close" id="modal-close-btn">关闭</button>`
-      : `<img src="${src}" alt="" />
+      : `<img src="${media.dataUrl}" alt="" />
          <button class="modal-close" id="modal-close-btn">关闭</button>`;
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
@@ -1560,10 +1373,6 @@
   // === Add / edit form modal ===
   let draft = { media: [] };
   let formOriginal = null; // snapshot for dirty-check
-  let formFeedbackId = null; // id used for media uploads (existing for edit, new uid for add)
-  let formUploadsThisSession = []; // paths uploaded during this session — cleaned up on cancel
-  let formRemovesPending = []; // paths whose media items were removed — committed on submit
-  let formUploadInflight = 0;
   const formMask = document.getElementById('form-mask');
   const formModal = document.getElementById('form-modal');
   const formModalTitle = document.getElementById('form-modal-title');
@@ -1590,12 +1399,8 @@
   }
 
   function openForm(item) {
-    formUploadsThisSession = [];
-    formRemovesPending = [];
-    formUploadInflight = 0;
     if (item) {
       editingId = item.id;
-      formFeedbackId = item.id;
       formTitle.value = item.title || '';
       formCategory.value = CATEGORIES.includes(item.category) ? item.category : DEFAULT_CATEGORY;
       formProblem.value = item.problem || '';
@@ -1605,7 +1410,6 @@
       formSubmitBtn.textContent = '保存修改';
     } else {
       editingId = null;
-      formFeedbackId = uid();
       formTitle.value = '';
       formCategory.value = DEFAULT_CATEGORY;
       formProblem.value = '';
@@ -1628,23 +1432,7 @@
     formModal.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
     editingId = null;
-    formFeedbackId = null;
     formOriginal = null;
-    formUploadsThisSession = [];
-    formRemovesPending = [];
-    formUploadInflight = 0;
-  }
-
-  // Cleanup orphaned uploads when user cancels.
-  async function cleanupOrphanedUploads() {
-    if (formUploadsThisSession.length === 0) return;
-    const paths = formUploadsThisSession.slice();
-    formUploadsThisSession = [];
-    try {
-      await storageRemove(paths);
-    } catch (e) {
-      console.warn('cleanup orphans failed', e);
-    }
   }
 
   function formIsDirty() {
@@ -1662,27 +1450,15 @@
   }
 
   function attemptCloseForm() {
-    if (formUploadInflight > 0) {
-      toast('正在上传媒体，请稍候');
-      return;
-    }
     if (formIsDirty()) {
       const msg = editingId ? '放弃本次修改？' : '放弃这条反馈？';
-      confirmSheet(msg, '已填写或改动的内容将不会保存。', async () => {
-        await cleanupOrphanedUploads();
-        closeForm();
-      });
+      confirmSheet(msg, '已填写或改动的内容将不会保存。', closeForm);
     } else {
-      // No changes to commit, but there may still be one-tap-uploaded media to clean.
-      cleanupOrphanedUploads().finally(closeForm);
+      closeForm();
     }
   }
 
   async function submitForm() {
-    if (formUploadInflight > 0) {
-      toast('正在上传媒体，请稍候');
-      return;
-    }
     const title = formTitle.value.trim();
     const problem = formProblem.value.trim();
     if (!title) {
@@ -1696,54 +1472,59 @@
       return;
     }
     const category = CATEGORIES.includes(formCategory.value) ? formCategory.value : DEFAULT_CATEGORY;
-    const wasEditing = !!editingId;
-    const id = wasEditing ? editingId : formFeedbackId;
-    const existing = wasEditing ? state.find(it => it.id === editingId) : null;
-    const item = {
-      id,
-      title,
-      category,
-      media: draft.media.map(m => ({ id: m.id, type: m.type, url: m.url, path: m.path, name: m.name })),
-      problem,
-      solution: formSolution.value.trim(),
-      createdAt: existing ? existing.createdAt : Date.now()
-    };
+    let item;
+    if (editingId) {
+      const existing = state.find(it => it.id === editingId);
+      item = {
+        id: editingId,
+        title,
+        category,
+        media: draft.media.slice(),
+        problem,
+        solution: formSolution.value.trim(),
+        createdAt: existing ? existing.createdAt : Date.now()
+      };
+    } else {
+      item = {
+        id: uid(),
+        title,
+        category,
+        media: draft.media.slice(),
+        problem,
+        solution: formSolution.value.trim(),
+        createdAt: Date.now()
+      };
+    }
 
     formSubmitBtn.disabled = true;
-    formSubmitBtn.textContent = '保存中…';
     try {
-      await cloudUpsert(item);
+      await dbPut(item);
     } catch (e) {
       formSubmitBtn.disabled = false;
-      formSubmitBtn.textContent = wasEditing ? '保存修改' : '提交反馈';
       toast('保存失败：' + (e?.message || e));
       return; // keep modal open with input intact
     }
     formSubmitBtn.disabled = false;
-    formSubmitBtn.textContent = wasEditing ? '保存修改' : '提交反馈';
 
-    // Commit pending removals (best-effort).
-    if (formRemovesPending.length > 0) {
-      const paths = formRemovesPending.slice();
-      formRemovesPending = [];
-      storageRemove(paths).catch(err => console.warn('storage remove failed', err));
-    }
-    // Uploads committed: don't clean.
-    formUploadsThisSession = [];
-
+    const wasEditing = !!editingId;
     if (wasEditing) {
       const idx = state.findIndex(it => it.id === editingId);
       if (idx >= 0) state[idx] = item;
-      else state.unshift(item);
+      else state.push(item);
     } else {
-      state.unshift(item); // newest first to match cloud order
+      state.push(item);
     }
     render();
     closeForm();
     toast(wasEditing ? '已保存修改' : '已添加');
+    if (!wasEditing) {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      });
+    }
   }
 
-  // === Image compression (returns Blob for upload) ===
+  // === Image compression ===
   function loadImage(src) {
     return new Promise((res, rej) => {
       const img = new Image();
@@ -1753,96 +1534,76 @@
     });
   }
 
-  function canvasToBlob(canvas, type, quality) {
-    return new Promise((res, rej) => {
-      canvas.toBlob((blob) => {
-        if (blob) res(blob);
-        else rej(new Error('canvas.toBlob 失败'));
-      }, type, quality);
-    });
-  }
-
   async function compressImage(file) {
-    // Skip GIF (animation) and SVG (vector) — keep original blob.
+    // Skip GIF (animation) and SVG (vector) — keep as-is.
     if (file.type === 'image/gif' || file.type === 'image/svg+xml') {
-      return { blob: file, type: file.type, name: file.name };
+      const dataUrl = await readAsDataURL(file);
+      return { dataUrl, type: file.type, name: file.name };
     }
-    let objectUrl = null;
+    const dataUrl = await readAsDataURL(file);
+    let img;
     try {
-      objectUrl = URL.createObjectURL(file);
-      const img = await loadImage(objectUrl);
-      if (img.naturalWidth <= IMG_MAX_DIM && img.naturalHeight <= IMG_MAX_DIM) {
-        return { blob: file, type: file.type, name: file.name };
-      }
-      const ratio = Math.min(IMG_MAX_DIM / img.naturalWidth, IMG_MAX_DIM / img.naturalHeight);
-      const w = Math.round(img.naturalWidth * ratio);
-      const h = Math.round(img.naturalHeight * ratio);
-      const canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const blob = await canvasToBlob(canvas, 'image/jpeg', IMG_QUALITY);
-      const baseName = (file.name || 'image').replace(/\.[^.]+$/, '');
-      return { blob, type: 'image/jpeg', name: baseName + '.jpg' };
+      img = await loadImage(dataUrl);
     } catch (e) {
-      return { blob: file, type: file.type, name: file.name };
-    } finally {
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      // Fall back to original if decode failed.
+      return { dataUrl, type: file.type, name: file.name };
     }
-  }
-
-  function setFormUploadingState(delta) {
-    formUploadInflight += delta;
-    const mediaAdd = formMediaGrid.querySelector('.media-add');
-    if (mediaAdd) mediaAdd.classList.toggle('uploading', formUploadInflight > 0);
-    formSubmitBtn.disabled = formUploadInflight > 0;
+    if (img.naturalWidth <= IMG_MAX_DIM && img.naturalHeight <= IMG_MAX_DIM) {
+      return { dataUrl, type: file.type, name: file.name };
+    }
+    const ratio = Math.min(IMG_MAX_DIM / img.naturalWidth, IMG_MAX_DIM / img.naturalHeight);
+    const w = Math.round(img.naturalWidth * ratio);
+    const h = Math.round(img.naturalHeight * ratio);
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, w, h);
+    const compressed = canvas.toDataURL('image/jpeg', IMG_QUALITY);
+    return { dataUrl: compressed, type: 'image/jpeg', name: file.name };
   }
 
   async function addMediaFile(f) {
-    const isImage = f.type.startsWith('image/');
-    const isVideo = f.type.startsWith('video/');
-    if (!isImage && !isVideo) {
-      toast('不支持的文件类型：' + (f.type || '未知'));
+    if (f.type.startsWith('image/')) {
+      try {
+        const r = await compressImage(f);
+        draft.media.push({ id: uid(), name: r.name, type: r.type, dataUrl: r.dataUrl });
+      } catch (e) {
+        toast('图片处理失败：' + f.name);
+      }
       return;
     }
-    if (isVideo && f.size > VIDEO_WARN_BYTES) {
-      const sizeMB = (f.size / 1024 / 1024).toFixed(1);
-      const ok = await confirmPromise(
-        `视频 ${sizeMB}MB，继续上传？`,
-        '超过 50MB 的视频会显著增大存储与流量占用。'
-      );
-      if (!ok) return;
-    }
-
-    setFormUploadingState(+1);
-    try {
-      let blob = f, name = f.name, mime = f.type;
-      if (isImage) {
-        const r = await compressImage(f);
-        blob = r.blob; name = r.name; mime = r.type;
+    if (f.type.startsWith('video/')) {
+      if (f.size > VIDEO_WARN_BYTES) {
+        const sizeMB = (f.size / 1024 / 1024).toFixed(1);
+        const ok = await confirmPromise(
+          `视频 ${sizeMB}MB，继续添加？`,
+          '超过 50MB 的视频会显著增大存储占用，并可能影响载入速度。'
+        );
+        if (!ok) return;
       }
-      const { url, path } = await storageUpload(formFeedbackId, blob, name, mime);
-      draft.media.push({
-        id: uid(),
-        type: isVideo ? 'video' : 'image',
-        url,
-        path,
-        name
-      });
-      formUploadsThisSession.push(path);
-    } catch (e) {
-      toast('上传失败：' + (e?.message || e));
-    } finally {
-      setFormUploadingState(-1);
+      try {
+        const dataUrl = await readAsDataURL(f);
+        draft.media.push({
+          id: uid(),
+          name: f.name,
+          type: f.type || 'application/octet-stream',
+          dataUrl
+        });
+      } catch (e) {
+        toast('视频读取失败：' + f.name);
+      }
+      return;
     }
+    toast('不支持的文件类型：' + (f.type || '未知'));
   }
 
   function renderFormMedia() {
     const tiles = draft.media.map(m => {
-      const src = mediaSrc(m);
-      const inner = mediaIsVideo(m)
-        ? `<video src="${src}" muted playsinline preload="metadata"></video><span class="video-badge">VIDEO</span>`
-        : `<img src="${src}" alt="${escapeAttr(m.name || '')}" />`;
+      const isVideo = (m.type || '').startsWith('video/');
+      const inner = isVideo
+        ? `<video src="${m.dataUrl}" muted playsinline></video><span class="video-badge">VIDEO</span>`
+        : `<img src="${m.dataUrl}" alt="${escapeAttr(m.name || '')}" />`;
       return `
         <div class="media-tile" data-action="form-preview" data-media-id="${m.id}">
           ${inner}
@@ -1851,7 +1612,7 @@
       `;
     }).join('');
     formMediaGrid.innerHTML = tiles + `
-      <label class="media-add${formUploadInflight > 0 ? ' uploading' : ''}">
+      <label class="media-add">
         <input type="file" accept="image/*,video/*" multiple id="form-media-input" />
         +
       </label>
@@ -1867,20 +1628,7 @@
     formMediaGrid.querySelectorAll('[data-action="form-remove"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const removed = draft.media.find(m => m.id === btn.dataset.mediaId);
         draft.media = draft.media.filter(m => m.id !== btn.dataset.mediaId);
-        if (removed && removed.path) {
-          // Decide cleanup vs. pending-removal:
-          // - If just uploaded this session, immediate cleanup is safe (not yet referenced anywhere)
-          // - Otherwise we'll commit removal on submit (still referenced by old DB row)
-          const sessionIdx = formUploadsThisSession.indexOf(removed.path);
-          if (sessionIdx >= 0) {
-            formUploadsThisSession.splice(sessionIdx, 1);
-            storageRemove([removed.path]).catch(err => console.warn(err));
-          } else {
-            formRemovesPending.push(removed.path);
-          }
-        }
         renderFormMedia();
       });
     });
@@ -1890,8 +1638,8 @@
       e.target.value = '';
       for (const f of files) {
         await addMediaFile(f);
-        renderFormMedia();
       }
+      renderFormMedia();
     });
   }
 
@@ -1907,18 +1655,12 @@
       toast('当前没有内容');
       return;
     }
-    confirmSheet('清空全部反馈？', '云端所有反馈条目、截图、视频都将被永久删除，所有人都将看到清空结果。', async () => {
-      // Collect storage paths first (to clean after row delete).
-      const allPaths = [];
-      state.forEach(it => (it.media || []).forEach(m => { if (m.path) allPaths.push(m.path); }));
+    confirmSheet('清空全部反馈？', '所有反馈条目、截图和文字将被永久删除。', async () => {
       try {
-        await cloudClear();
+        await dbClear();
       } catch (e) {
         toast('清空失败：' + (e?.message || e));
         return;
-      }
-      if (allPaths.length > 0) {
-        storageRemove(allPaths).catch(err => console.warn('storage clear failed', err));
       }
       state = [];
       render();
@@ -2001,68 +1743,25 @@
     });
   });
 
-  async function dataUrlToBlob(dataUrl) {
-    const r = await fetch(dataUrl);
-    return r.blob();
-  }
-
-  // Re-uploads any media entries that still carry a base64 dataUrl (legacy backups).
-  // Mutates `items` in place. Returns the number of media uploaded.
-  async function uploadLegacyMediaInItems(items) {
-    let total = 0;
-    items.forEach(it => (it.media || []).forEach(m => { if (m && !m.url && m.dataUrl) total++; }));
-    if (total === 0) return 0;
-    let done = 0;
-    showBanner({ text: `正在上传媒体 ${done}/${total}…`, variant: 'info' });
-    for (const item of items) {
-      if (!Array.isArray(item.media)) continue;
-      for (let i = 0; i < item.media.length; i++) {
-        const m = item.media[i];
-        if (!m || m.url || !m.dataUrl) continue;
-        try {
-          const blob = await dataUrlToBlob(m.dataUrl);
-          const isVideo = (m.type === 'video') || (typeof m.type === 'string' && m.type.startsWith('video/'));
-          const mime = blob.type || (isVideo ? 'video/mp4' : 'image/jpeg');
-          const name = m.name || (isVideo ? 'video' : 'image');
-          const { url, path } = await storageUpload(item.id, blob, name, mime);
-          item.media[i] = { id: m.id || uid(), type: isVideo ? 'video' : 'image', url, path, name };
-          done++;
-          showBanner({ text: `正在上传媒体 ${done}/${total}…`, variant: 'info' });
-        } catch (e) {
-          // Toast specific error and continue (don't roll back successful uploads).
-          toast(`媒体上传失败：${e?.message || e}`);
-          // Drop this media item so the row can still be saved.
-          item.media[i] = null;
-        }
-      }
-      item.media = item.media.filter(Boolean);
-    }
-    return done;
-  }
-
   async function doImport(mode, items) {
-    let mediaUploaded = 0;
     try {
-      mediaUploaded = await uploadLegacyMediaInItems(items);
       if (mode === 'replace') {
-        // Collect existing paths to remove from storage after row clear.
-        const oldPaths = [];
-        state.forEach(it => (it.media || []).forEach(m => { if (m.path) oldPaths.push(m.path); }));
-        await cloudClear();
-        if (oldPaths.length > 0) {
-          storageRemove(oldPaths).catch(err => console.warn(err));
-        }
+        await dbClear();
+        await dbPutMany(items);
+        state = items.slice();
+      } else {
+        await dbPutMany(items);
+        const map = new Map(state.map(it => [it.id, it]));
+        items.forEach(it => map.set(it.id, it));
+        state = Array.from(map.values());
       }
-      await cloudUpsertMany(items);
-      state = await cloudGetAll();
+      state.sort((a, b) => a.createdAt - b.createdAt);
     } catch (e) {
-      hideBanner();
       toast('导入失败：' + (e?.message || e));
       return;
     }
-    hideBanner();
     render();
-    toast(`已导入 ${items.length} 条反馈，上传 ${mediaUploaded} 个媒体文件`);
+    toast(`已导入 ${items.length} 条反馈`);
   }
 
   function buildMarkdown(items) {
@@ -2086,11 +1785,10 @@
         lines.push('_无_');
       } else {
         item.media.forEach((m, idx) => {
-          const src = mediaSrc(m);
-          if (mediaIsVideo(m)) {
-            lines.push(`📹 **${m.name || 'video-' + (idx + 1)}** — ${src}`);
+          if (m.type.startsWith('image/')) {
+            lines.push(`![${m.name || 'image-' + (idx + 1)}](${m.dataUrl})`);
           } else {
-            lines.push(`![${m.name || 'image-' + (idx + 1)}](${src})`);
+            lines.push(`📹 **${m.name || 'video-' + (idx + 1)}** _(视频，Markdown 中无法直接预览)_`);
           }
           lines.push('');
         });
@@ -2115,94 +1813,24 @@
     return lines.join('\n');
   }
 
-  // === Refresh ===
-  const refreshBtn = document.getElementById('btn-refresh');
-  let _suppressVisibilityRefresh = 0;
-
-  function setRefreshing(on) {
-    refreshBtn.classList.toggle('spinning', on);
-    refreshBtn.disabled = on;
-    isLoadingRemote = on;
-  }
-
-  async function refreshFromCloud(silent = false) {
-    if (isLoadingRemote) return;
-    if (!supabase) {
-      if (!silent) toast('未连接服务器');
-      return;
-    }
-    setRefreshing(true);
-    try {
-      state = await cloudGetAll();
-      render();
-      if (!silent) toast('已刷新');
-    } catch (e) {
-      if (!silent) toast('网络错误，请稍后重试');
-      console.warn('refresh failed', e);
-    } finally {
-      setRefreshing(false);
-    }
-  }
-
-  refreshBtn.addEventListener('click', () => refreshFromCloud(false));
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'visible') return;
-    if (_suppressVisibilityRefresh > Date.now()) return;
-    refreshFromCloud(true);
-  });
-
-  // === Legacy IDB banner ===
-  function offerLegacyClear(count) {
-    showBanner({
-      variant: 'warn',
-      text: `检测到本地有 ${count} 条旧数据。请点「导出」按钮备份后，通过「导入备份」上传到云端；上传完成后可点此提示清理本地缓存。`,
-      onClick: () => {
-        confirmSheet(
-          '确认本地数据已经备份并导入到云端？',
-          '清理后本地缓存将被删除（仅清理本机 IndexedDB，云端不受影响）。',
-          async () => {
-            try {
-              await clearLegacyIDB();
-              hideBanner();
-              toast('已清理本地缓存');
-            } catch (e) {
-              toast('清理失败：' + (e?.message || e));
-            }
-          }
-        );
-      }
-    });
-  }
-
-  // === Bootstrap ===
-  showLoadingState();
+  // === Init ===
+  // First render — empty list; bootstrap then re-render once data is loaded.
+  render();
 
   (async () => {
-    if (supabaseInitError) {
-      showBanner({ variant: 'error', text: '无法连接服务器（' + supabaseInitError + '），请检查网络或刷新页面' });
-      emptyTitleEl.textContent = '未连接服务器';
-      emptyDescEl.textContent = '加载失败，请稍后重试';
-      return;
-    }
-
-    // 1) Detect leftover IndexedDB data and show migration banner (don't auto-import).
     try {
-      const legacyCount = await legacyIDBCount();
-      if (legacyCount > 0) offerLegacyClear(legacyCount);
+      await migrateFromLocalStorage();
     } catch (e) {
-      console.warn('legacy IDB check failed', e);
+      toast('迁移异常：' + (e?.message || e));
+      console.warn(e);
     }
-
-    // 2) Initial cloud load
     try {
-      state = await cloudGetAll();
+      const all = await dbGetAll();
+      state = all.map(normalizeItem);
+      state.sort((a, b) => a.createdAt - b.createdAt);
     } catch (e) {
-      console.warn('initial cloudGetAll failed', e);
-      toast('网络错误，请稍后重试');
-      emptyTitleEl.textContent = '加载失败';
-      emptyDescEl.textContent = '点击右上「刷新」按钮重试';
-      return;
+      toast('加载数据失败：' + (e?.message || e));
+      console.warn('dbGetAll failed', e);
     }
     render();
   })();

@@ -14,9 +14,6 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23f5efe1'/%3E%3Ctext x='50%25' y='54%25' font-family='Georgia,serif' font-size='38' text-anchor='middle' dominant-baseline='middle' fill='%23b8504a'%3EF%3C/text%3E%3C/svg%3E" />
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23f5efe1'/%3E%3Ctext x='50%25' y='56%25' font-family='Georgia,serif' font-size='108' text-anchor='middle' dominant-baseline='middle' fill='%23b8504a'%3EF%3C/text%3E%3C/svg%3E" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <style>
   :root {
@@ -210,8 +207,8 @@
     border-radius: var(--radius-sm);
     padding: 11px 13px;
     font-family: var(--mono);
-    font-size: 16px;
-    line-height: 1.7;
+    font-size: 14px;
+    line-height: 1.6;
     color: var(--ink);
     resize: vertical;
     min-height: 80px;
@@ -585,8 +582,8 @@
   /* === Read-only card text === */
   .readonly-text {
     font-family: var(--mono);
-    font-size: 16px;
-    line-height: 1.7;
+    font-size: 13.5px;
+    line-height: 1.65;
     color: var(--ink);
     white-space: pre-wrap;
     word-break: break-word;
@@ -596,21 +593,6 @@
   .readonly-text.empty {
     color: #b8ad99;
     font-style: italic;
-  }
-
-  /* === Section background blocks (problem / solution) === */
-  .section-problem .readonly-text,
-  .section-solution .readonly-text {
-    padding: 14px 16px;
-    border-radius: 8px;
-    margin-top: 8px;
-  }
-  .section-problem .readonly-text { background: #faf0e6; }
-  .section-solution .readonly-text { background: #ecf3e8; }
-  .section-problem .readonly-text.empty,
-  .section-solution .readonly-text.empty {
-    background: transparent;
-    padding: 2px 0;
   }
 
   /* === Filter chips === */
@@ -866,180 +848,6 @@
     justify-content: center;
     z-index: 2;
     letter-spacing: 0.06em;
-  }
-
-  /* === PDF report (offscreen render container) === */
-  .pdf-export {
-    position: absolute;
-    left: -9999px;
-    top: 0;
-    width: 750px;
-    background: #fbf7ec;
-    padding: 40px 36px;
-    box-sizing: border-box;
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
-    color: #2b2620;
-    -webkit-font-smoothing: antialiased;
-  }
-  .pdf-cover {
-    text-align: center;
-    padding: 24px 0 40px;
-    border-bottom: 1px solid #e6dcc4;
-    margin-bottom: 30px;
-  }
-  .pdf-cover-brand {
-    font-family: 'Fraunces', Georgia, serif;
-    font-style: italic;
-    font-size: 14px;
-    color: #8a6d3b;
-    letter-spacing: 0.04em;
-    margin-bottom: 14px;
-  }
-  .pdf-cover-title {
-    font-family: 'Fraunces', Georgia, serif;
-    font-size: 38px;
-    font-weight: 700;
-    margin: 0 0 18px;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
-  }
-  .pdf-cover-meta {
-    font-size: 12px;
-    color: #7a6f60;
-    line-height: 1.9;
-  }
-  .pdf-item {
-    padding: 24px 0;
-    border-bottom: 1px dashed #d8cdb2;
-    page-break-inside: avoid;
-  }
-  .pdf-item:last-child { border-bottom: none; }
-  .pdf-item-head {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 6px;
-  }
-  .pdf-item-no {
-    font-family: 'Fraunces', Georgia, serif;
-    font-style: italic;
-    font-weight: 600;
-    font-size: 14px;
-    color: #2b2620;
-  }
-  .pdf-item-time {
-    font-size: 11px;
-    color: #7a6f60;
-    margin-left: auto;
-    font-family: 'JetBrains Mono', monospace;
-  }
-  .pdf-tag {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 999px;
-    letter-spacing: 0.03em;
-  }
-  .pdf-tag-red     { background: #f0d8d4; color: #a04438; }
-  .pdf-tag-green   { background: #dde6d2; color: #5d7a4a; }
-  .pdf-tag-blue    { background: #d9e0e6; color: #4a6478; }
-  .pdf-tag-amber   { background: #ebdcb8; color: #7a5a25; }
-  .pdf-tag-neutral { background: #e8dec7; color: #6f6452; }
-  .pdf-item-title {
-    font-family: 'Fraunces', Georgia, serif;
-    font-size: 22px;
-    font-weight: 700;
-    margin: 6px 0 14px;
-    color: #2b2620;
-    line-height: 1.3;
-    letter-spacing: -0.012em;
-  }
-  .pdf-section {
-    padding: 12px 14px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    font-size: 13.5px;
-    line-height: 1.7;
-  }
-  .pdf-section-problem  { background: #faf0e6; }
-  .pdf-section-solution { background: #ecf3e8; }
-  .pdf-section-label {
-    display: block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 6px;
-  }
-  .pdf-section-problem  .pdf-section-label { color: #a04438; }
-  .pdf-section-solution .pdf-section-label { color: #5d7a4a; }
-  .pdf-section-text {
-    white-space: pre-wrap;
-    word-break: break-word;
-    color: #2b2620;
-  }
-  .pdf-section-text.empty {
-    color: #b8ad99;
-    font-style: italic;
-  }
-  .pdf-media {
-    margin-top: 12px;
-  }
-  .pdf-media-label {
-    display: block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #7a6f60;
-    margin-bottom: 8px;
-  }
-  .pdf-media-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-  }
-  .pdf-media-grid img {
-    width: 100%;
-    height: 150px;
-    object-fit: cover;
-    border-radius: 6px;
-    border: 1px solid #e6dcc4;
-    display: block;
-  }
-  .pdf-media-video,
-  .pdf-media-fallback {
-    height: 150px;
-    background: #2b2620;
-    color: #f5efe1;
-    border-radius: 6px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 12px;
-    font-size: 10.5px;
-    text-align: center;
-    word-break: break-all;
-    line-height: 1.5;
-    font-family: 'JetBrains Mono', monospace;
-  }
-  .pdf-media-icon {
-    font-size: 24px;
-    margin-bottom: 6px;
-    font-family: 'Fraunces', Georgia, serif;
-  }
-  .pdf-media-name {
-    font-weight: 600;
-    margin-bottom: 4px;
-  }
-  .pdf-media-url {
-    font-size: 9px;
-    opacity: 0.75;
-    word-break: break-all;
   }
 
   /* small screens */
@@ -1552,12 +1360,12 @@
             : `<div class="media-grid">${item.media.map(m => renderTileReadonly(m)).join('')}</div>`}
         </section>
 
-        <section class="section section-problem">
+        <section class="section">
           <div class="section-label"><span class="dot dot-problem"></span> 问题描述</div>
           <div class="readonly-text${hasProblem ? '' : ' empty'}">${hasProblem ? escapeAttr(item.problem) : '无'}</div>
         </section>
 
-        <section class="section section-solution">
+        <section class="section">
           <div class="section-label"><span class="dot dot-solution"></span> 解决方案</div>
           <div class="readonly-text${hasSolution ? '' : ' empty'}">${hasSolution ? escapeAttr(item.solution) : '无'}</div>
         </section>
@@ -2125,8 +1933,6 @@
       desc: '选择一种方式保存或恢复数据',
       actions: [
         { label: '导出 Markdown', onTap: exportMarkdown },
-        { label: '导出 Excel', onTap: exportExcel },
-        { label: '导出 PDF', onTap: exportPDF },
         { label: '备份 JSON', onTap: backupJson },
         { label: '导入备份…', onTap: triggerImport }
       ]
@@ -2158,213 +1964,6 @@
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
     downloadBlob(new Blob([json], { type: 'application/json;charset=utf-8' }), `feedback-backup-${stamp}.json`);
     toast(`已备份 ${state.length} 条到 JSON`);
-  }
-
-  function getExportableItems() {
-    // Honor the current filter; sort newest first.
-    return getVisibleItems().slice().sort((a, b) => b.createdAt - a.createdAt);
-  }
-
-  // === Excel ===
-  function exportExcel() {
-    if (!window.XLSX) { toast('Excel 库未加载，请刷新页面'); return; }
-    const items = getExportableItems();
-    if (items.length === 0) { toast('当前没有内容'); return; }
-    const headers = ['序号', '标题', '类型', '创建时间', '问题描述', '解决方案', '媒体数量', '媒体链接'];
-    const rows = items.map((it, i) => [
-      i + 1,
-      (it.title || '').trim() || '未命名反馈',
-      getCategoryOf(it),
-      formatTime(it.createdAt),
-      it.problem || '',
-      it.solution || '',
-      (it.media || []).length,
-      (it.media || []).map(m => mediaSrc(m)).filter(Boolean).join('\n')
-    ]);
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-    ws['!cols'] = [
-      { wch: 6 }, { wch: 30 }, { wch: 10 }, { wch: 20 },
-      { wch: 50 }, { wch: 50 }, { wch: 8 }, { wch: 60 }
-    ];
-    // Best-effort styling: SheetJS community xlsx writer ignores styles, but set anyway
-    // so any style-aware fork / future version picks them up. Wrap text on long columns.
-    headers.forEach((_, idx) => {
-      const ref = XLSX.utils.encode_cell({ r: 0, c: idx });
-      if (ws[ref]) {
-        ws[ref].s = ws[ref].s || {};
-        ws[ref].s.font = { bold: true };
-        ws[ref].s.alignment = { vertical: 'center', horizontal: 'left' };
-      }
-    });
-    for (let r = 1; r <= rows.length; r++) {
-      [4, 5, 7].forEach(c => { // 问题描述、解决方案、媒体链接 — 启用换行
-        const ref = XLSX.utils.encode_cell({ r, c });
-        if (ws[ref]) {
-          ws[ref].s = ws[ref].s || {};
-          ws[ref].s.alignment = { wrapText: true, vertical: 'top' };
-        }
-      });
-    }
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, '反馈记录');
-    const stamp = new Date().toISOString().slice(0, 10);
-    try {
-      XLSX.writeFile(wb, `feedback-export-${stamp}.xlsx`);
-      toast('Excel 已导出');
-    } catch (e) {
-      toast('导出失败：' + (e?.message || e));
-    }
-  }
-
-  // === PDF (html2canvas + jsPDF) ===
-  function buildPdfReportHtml(items) {
-    const now = formatTime(Date.now());
-    const itemsHtml = items.map((it, i) => {
-      const title = (it.title || '').trim() || '未命名反馈';
-      const category = getCategoryOf(it);
-      const colorClass = 'pdf-tag-' + (CATEGORY_COLOR[category] || 'neutral');
-      const problem = (it.problem || '').trim();
-      const solution = (it.solution || '').trim();
-      const mediaHtml = (it.media || []).length === 0 ? '' : `
-        <div class="pdf-media">
-          <span class="pdf-media-label">截图 / 视频（${it.media.length}）</span>
-          <div class="pdf-media-grid">
-            ${it.media.map(m => {
-              const src = mediaSrc(m);
-              const name = m.name || '';
-              if (mediaIsVideo(m)) {
-                return `
-                  <div class="pdf-media-video">
-                    <div class="pdf-media-icon">▶</div>
-                    <div class="pdf-media-name">[视频] ${escapeAttr(name)}</div>
-                    <div class="pdf-media-url">${escapeAttr(src)}</div>
-                  </div>
-                `;
-              }
-              return `<img src="${escapeAttr(src)}" crossorigin="anonymous" data-url="${escapeAttr(src)}" data-name="${escapeAttr(name)}" alt="" />`;
-            }).join('')}
-          </div>
-        </div>
-      `;
-      return `
-        <div class="pdf-item">
-          <div class="pdf-item-head">
-            <span class="pdf-item-no">No.${String(i + 1).padStart(2, '0')}</span>
-            <span class="pdf-tag ${colorClass}">${escapeAttr(category)}</span>
-            <span class="pdf-item-time">${formatTime(it.createdAt)}</span>
-          </div>
-          <h2 class="pdf-item-title">${escapeAttr(title)}</h2>
-          <div class="pdf-section pdf-section-problem">
-            <span class="pdf-section-label">问题描述</span>
-            <div class="pdf-section-text${problem ? '' : ' empty'}">${problem ? escapeAttr(problem) : '无'}</div>
-          </div>
-          <div class="pdf-section pdf-section-solution">
-            <span class="pdf-section-label">解决方案</span>
-            <div class="pdf-section-text${solution ? '' : ' empty'}">${solution ? escapeAttr(solution) : '无'}</div>
-          </div>
-          ${mediaHtml}
-        </div>
-      `;
-    }).join('');
-    return `
-      <div class="pdf-cover">
-        <div class="pdf-cover-brand">Feedback Log</div>
-        <h1 class="pdf-cover-title">问题反馈记录</h1>
-        <div class="pdf-cover-meta">
-          <div>导出时间：${escapeAttr(now)}</div>
-          <div>共 ${items.length} 条反馈</div>
-        </div>
-      </div>
-      ${itemsHtml}
-    `;
-  }
-
-  // Wait for all <img> in the container to settle (loaded or failed).
-  // On error, swap the img for a fallback block so html2canvas still produces something useful.
-  function waitForPdfImages(container) {
-    const imgs = Array.from(container.querySelectorAll('img'));
-    return Promise.all(imgs.map(img => new Promise((resolve) => {
-      const finish = () => resolve();
-      if (img.complete && img.naturalWidth > 0) return finish();
-      let done = false;
-      const settle = (failed) => {
-        if (done) return;
-        done = true;
-        if (failed) {
-          const fallback = document.createElement('div');
-          fallback.className = 'pdf-media-fallback';
-          fallback.innerHTML = `
-            <div class="pdf-media-icon">⌧</div>
-            <div class="pdf-media-name">[图片加载失败]</div>
-            <div class="pdf-media-url">${escapeAttr(img.getAttribute('data-url') || img.src)}</div>
-          `;
-          if (img.parentNode) img.parentNode.replaceChild(fallback, img);
-        }
-        resolve();
-      };
-      img.addEventListener('load', () => settle(false));
-      img.addEventListener('error', () => settle(true));
-      setTimeout(() => settle(!img.complete || img.naturalWidth === 0), 10000);
-    })));
-  }
-
-  async function exportPDF() {
-    if (!window.html2canvas || !window.jspdf) {
-      toast('PDF 库未加载，请刷新页面');
-      return;
-    }
-    const items = getExportableItems();
-    if (items.length === 0) { toast('当前没有内容'); return; }
-
-    toast('正在生成 PDF，请稍候…');
-
-    const container = document.createElement('div');
-    container.className = 'pdf-export';
-    container.innerHTML = buildPdfReportHtml(items);
-    document.body.appendChild(container);
-
-    try {
-      await waitForPdfImages(container);
-      const canvas = await window.html2canvas(container, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: '#fbf7ec',
-        logging: false,
-        imageTimeout: 12000
-      });
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ unit: 'pt', format: 'a4', orientation: 'p' });
-      const margin = 20;
-      const pdfWidth = 595 - margin * 2;   // 555
-      const pageHeight = 842 - margin * 2; // 802
-      const ratio = pdfWidth / canvas.width;
-      const sliceHeightPx = Math.floor(pageHeight / ratio);
-
-      let offsetY = 0;
-      let firstPage = true;
-      while (offsetY < canvas.height) {
-        if (!firstPage) pdf.addPage();
-        firstPage = false;
-        const sliceCanvas = document.createElement('canvas');
-        const remaining = canvas.height - offsetY;
-        sliceCanvas.width = canvas.width;
-        sliceCanvas.height = Math.min(sliceHeightPx, remaining);
-        const sctx = sliceCanvas.getContext('2d');
-        sctx.drawImage(canvas, 0, offsetY, canvas.width, sliceCanvas.height, 0, 0, canvas.width, sliceCanvas.height);
-        const imgData = sliceCanvas.toDataURL('image/jpeg', 0.85);
-        pdf.addImage(imgData, 'JPEG', margin, margin, pdfWidth, sliceCanvas.height * ratio);
-        offsetY += sliceCanvas.height;
-      }
-      const stamp = new Date().toISOString().slice(0, 10);
-      pdf.save(`feedback-report-${stamp}.pdf`);
-      toast('PDF 已导出');
-    } catch (e) {
-      console.error('PDF export failed', e);
-      toast('导出失败：' + (e?.message || e));
-    } finally {
-      if (container.parentNode) container.parentNode.removeChild(container);
-    }
   }
 
   const importFileInput = document.getElementById('import-file-input');

@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="反馈" />
+<meta name="theme-color" content="#f5efe1" />
+<title>问题反馈</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23f5efe1'/%3E%3Ctext x='50%25' y='54%25' font-family='Georgia,serif' font-size='38' text-anchor='middle' dominant-baseline='middle' fill='%23b8504a'%3EF%3C/text%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%23f5efe1'/%3E%3Ctext x='50%25' y='56%25' font-family='Georgia,serif' font-size='108' text-anchor='middle' dominant-baseline='middle' fill='%23b8504a'%3EF%3C/text%3E%3C/svg%3E" />
+
+<style>
+  :root {
+    --bg: #f5efe1;
+    --bg-soft: #efe7d4;
+    --card: #fbf7ec;
+    --card-elev: #ffffff;
+    --ink: #2b2620;
+    --ink-muted: #7a6f60;
+    --line: #e6dcc4;
+    --line-soft: #efe7d2;
+    --dot-media: #c97a4a;
+    --dot-problem: #b8504a;
+    --dot-solution: #6b8e5a;
+    --accent: #8a6d3b;
+    --danger: #b8504a;
+    --shadow: 0 1px 2px rgba(80, 60, 30, 0.04), 0 6px 18px rgba(80, 60, 30, 0.07);
+    --shadow-lift: 0 2px 4px rgba(80, 60, 30, 0.06), 0 14px 32px rgba(80, 60, 30, 0.12);
+    --radius: 18px;
+    --radius-sm: 12px;
+    --serif: 'Fraunces', 'Songti SC', Georgia, serif;
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
+  body {
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.55;
+    min-height: 100vh;
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior-y: contain;
+  }
+
+  /* === Header === */
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    padding: calc(var(--safe-top) + 14px) calc(var(--safe-right) + 18px) 14px calc(var(--safe-left) + 18px);
+    background: rgba(245, 239, 225, 0.88);
+    backdrop-filter: saturate(150%) blur(14px);
+    -webkit-backdrop-filter: saturate(150%) blur(14px);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .app-header-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .app-title {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 28px;
+    letter-spacing: -0.01em;
+    margin: 0;
+    line-height: 1.1;
+    font-variation-settings: "opsz" 96, "SOFT" 50;
+  }
+  .app-subtitle {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-muted);
+    margin-top: 4px;
+    letter-spacing: 0.02em;
+  }
+  .header-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .icon-btn {
+    appearance: none;
+    background: var(--card);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 9px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: transform 0.12s ease, background 0.12s ease;
+  }
+  .icon-btn:active { transform: scale(0.96); background: var(--bg-soft); }
+  .icon-btn svg { width: 14px; height: 14px; }
+
+  /* === Main === */
+  main {
+    padding: 20px calc(var(--safe-right) + 18px) calc(var(--safe-bottom) + 120px) calc(var(--safe-left) + 18px);
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--ink-muted);
+  }
+  .empty-state .emoji {
+    font-size: 40px;
+    margin-bottom: 12px;
+    font-family: var(--serif);
+    color: var(--accent);
+  }
+  .empty-state h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 20px;
+    color: var(--ink);
+    margin: 0 0 6px;
+  }
+  .empty-state p {
+    font-size: 12.5px;
+    margin: 0;
+    letter-spacing: 0.01em;
+  }
+
+  /* === Feedback Card === */
+  .feedback-list { display: flex; flex-direction: column; gap: 18px; }
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--line-soft);
+    overflow: hidden;
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 6px;
+  }
+  .card-index {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 17px;
+    color: var(--ink);
+    font-style: italic;
+    letter-spacing: 0.01em;
+  }
+  .card-index span {
+    font-family: var(--mono);
+    font-style: normal;
+    font-size: 11px;
+    color: var(--ink-muted);
+    margin-left: 8px;
+    letter-spacing: 0.04em;
+  }
+  .card-delete {
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: var(--ink-muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+  }
+  .card-delete:active { background: var(--bg-soft); color: var(--danger); }
+
+  .section { padding: 10px 16px 14px; }
+  .section + .section { border-top: 1px dashed var(--line); }
+
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 8px;
+  }
+  .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6);
+  }
+  .dot-media { background: var(--dot-media); }
+  .dot-problem { background: var(--dot-problem); }
+  .dot-solution { background: var(--dot-solution); }
+
+  /* === Textarea === */
+  textarea {
+    width: 100%;
+    border: 1px solid var(--line);
+    background: var(--card-elev);
+    border-radius: var(--radius-sm);
+    padding: 11px 13px;
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink);
+    resize: vertical;
+    min-height: 80px;
+    outline: none;
+    transition: border 0.15s ease, box-shadow 0.15s ease;
+    -webkit-appearance: none;
+  }
+  textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(138, 109, 59, 0.12);
+  }
+  textarea::placeholder {
+    color: #b8ad99;
+    font-family: var(--mono);
+  }
+
+  /* === Media grid === */
+  .media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+    gap: 8px;
+  }
+  .media-tile {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    cursor: pointer;
+  }
+  .media-tile img, .media-tile video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+  }
+  .media-tile .video-badge {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    letter-spacing: 0.04em;
+  }
+  .media-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    border: none;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  .media-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1 / 1;
+    border-radius: 10px;
+    border: 1.5px dashed var(--line);
+    background: transparent;
+    color: var(--ink-muted);
+    font-family: var(--serif);
+    font-size: 26px;
+    font-weight: 300;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  }
+  .media-add:active {
+    background: var(--bg-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .media-add input { display: none; }
+
+  /* === Floating add button === */
+  .fab-wrap {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 14px calc(var(--safe-right) + 18px) calc(var(--safe-bottom) + 14px) calc(var(--safe-left) + 18px);
+    background: linear-gradient(to top, rgba(245, 239, 225, 0.98) 60%, rgba(245, 239, 225, 0));
+    z-index: 40;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .fab {
+    pointer-events: auto;
+    appearance: none;
+    border: none;
+    background: var(--ink);
+    color: var(--bg);
+    font-family: var(--serif);
+    font-size: 15px;
+    font-weight: 500;
+    padding: 14px 24px;
+    border-radius: 999px;
+    box-shadow: var(--shadow-lift);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.01em;
+    transition: transform 0.12s ease;
+    font-style: italic;
+  }
+  .fab:active { transform: scale(0.97); }
+  .fab .plus {
+    font-family: var(--mono);
+    font-style: normal;
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1;
+  }
+
+  /* === Modal / preview === */
+  .modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 16, 10, 0.88);
+    z-index: 100;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: calc(var(--safe-top) + 20px) 20px calc(var(--safe-bottom) + 20px);
+    animation: fadeIn 0.18s ease;
+  }
+  .modal.open { display: flex; }
+  .modal-content {
+    max-width: 100%;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+  .modal-content img, .modal-content video {
+    max-width: 100%;
+    max-height: calc(100vh - 140px);
+    max-height: calc(100dvh - 140px);
+    border-radius: 12px;
+    object-fit: contain;
+    background: #000;
+  }
+  .modal-close {
+    appearance: none;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 8px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* === Toast === */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(var(--safe-bottom) + 90px);
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: var(--bg);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    box-shadow: var(--shadow-lift);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 110;
+    letter-spacing: 0.02em;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* === Confirm sheet === */
+  .sheet-mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 16, 10, 0.4);
+    z-index: 95;
+    display: none;
+    animation: fadeIn 0.15s ease;
+  }
+  .sheet-mask.open { display: block; }
+  .sheet {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--card);
+    border-radius: 22px 22px 0 0;
+    padding: 22px 22px calc(var(--safe-bottom) + 16px);
+    z-index: 96;
+    transform: translateY(100%);
+    transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.15);
+  }
+  .sheet.open { transform: translateY(0); }
+  .sheet h3 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 18px;
+    margin: 0 0 6px;
+  }
+  .sheet p {
+    font-size: 12.5px;
+    color: var(--ink-muted);
+    margin: 0 0 18px;
+    line-height: 1.6;
+  }
+  .sheet-actions { display: flex; gap: 10px; }
+  .sheet-btn {
+    flex: 1;
+    appearance: none;
+    border: 1px solid var(--line);
+    background: var(--card-elev);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .sheet-btn.danger {
+    background: var(--danger);
+    color: #fff;
+    border-color: var(--danger);
+  }
+  .sheet-btn:active { opacity: 0.8; }
+
+  /* small screens */
+  @media (max-width: 360px) {
+    .app-title { font-size: 24px; }
+    .icon-btn { padding: 8px 10px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="app-header-row">
+    <div>
+      <h1 class="app-title">Feedback Log</h1>
+      <div class="app-subtitle">问题反馈 · <span id="count-badge">0 条</span></div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="btn-export" aria-label="导出">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        导出
+      </button>
+      <button class="icon-btn" id="btn-clear" aria-label="清空">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        清空
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="feedback-list" class="feedback-list"></div>
+  <div id="empty-state" class="empty-state" hidden>
+    <div class="emoji">¶</div>
+    <h2>还没有反馈</h2>
+    <p>点击底部按钮，记录第一条问题</p>
+  </div>
+</main>
+
+<div class="fab-wrap">
+  <button class="fab" id="btn-add">
+    <span class="plus">+</span>
+    <span>新增反馈</span>
+  </button>
+</div>
+
+<!-- Preview modal -->
+<div class="modal" id="modal" role="dialog" aria-hidden="true">
+  <div class="modal-content" id="modal-content"></div>
+</div>
+
+<!-- Confirm sheet -->
+<div class="sheet-mask" id="sheet-mask"></div>
+<div class="sheet" id="sheet">
+  <h3 id="sheet-title">确认操作</h3>
+  <p id="sheet-desc">此操作不可撤销</p>
+  <div class="sheet-actions">
+    <button class="sheet-btn" id="sheet-cancel">取消</button>
+    <button class="sheet-btn danger" id="sheet-confirm">确认</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">已保存</div>
+
+<script>
+(() => {
+  const STORAGE_KEY = 'feedback-h5-v1';
+  const MAX_FILE_BYTES = 8 * 1024 * 1024; // 8MB per file, to keep localStorage usable
+
+  /** @type {{ id: string; media: { id: string; name: string; type: string; dataUrl: string }[]; problem: string; solution: string; createdAt: number }[]} */
+  let state = load();
+
+  // === Storage ===
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      console.warn('load failed', e);
+      return [];
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      toast('存储空间不足，请删除部分文件');
+      console.warn('save failed', e);
+    }
+  }
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  // === Render ===
+  const listEl = document.getElementById('feedback-list');
+  const emptyEl = document.getElementById('empty-state');
+  const countEl = document.getElementById('count-badge');
+
+  function render() {
+    countEl.textContent = state.length + ' 条';
+    if (state.length === 0) {
+      listEl.innerHTML = '';
+      emptyEl.hidden = false;
+      return;
+    }
+    emptyEl.hidden = true;
+    listEl.innerHTML = state.map((item, i) => renderCard(item, i)).join('');
+    bindCardEvents();
+  }
+
+  function renderCard(item, i) {
+    return `
+      <article class="card" data-id="${item.id}">
+        <div class="card-head">
+          <div class="card-index">No.${String(i + 1).padStart(2, '0')} <span>${formatTime(item.createdAt)}</span></div>
+          <button class="card-delete" data-action="delete-card">删除</button>
+        </div>
+
+        <section class="section">
+          <div class="section-label"><span class="dot dot-media"></span> 截图 / 视频</div>
+          <div class="media-grid">
+            ${item.media.map(m => renderTile(m)).join('')}
+            <label class="media-add">
+              <input type="file" accept="image/*,video/*" multiple data-action="add-media" />
+              +
+            </label>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-label"><span class="dot dot-problem"></span> 问题描述</div>
+          <textarea data-field="problem" placeholder="发生了什么？复现步骤、预期与实际…">${escapeAttr(item.problem)}</textarea>
+        </section>
+
+        <section class="section">
+          <div class="section-label"><span class="dot dot-solution"></span> 解决方案</div>
+          <textarea data-field="solution" placeholder="建议怎么改？为什么？">${escapeAttr(item.solution)}</textarea>
+        </section>
+      </article>
+    `;
+  }
+
+  function renderTile(m) {
+    const isVideo = m.type.startsWith('video/');
+    const inner = isVideo
+      ? `<video src="${m.dataUrl}" muted playsinline></video><span class="video-badge">VIDEO</span>`
+      : `<img src="${m.dataUrl}" alt="${escapeAttr(m.name)}" loading="lazy" />`;
+    return `
+      <div class="media-tile" data-action="preview-media" data-media-id="${m.id}">
+        ${inner}
+        <button class="media-remove" data-action="remove-media" data-media-id="${m.id}" aria-label="删除">×</button>
+      </div>
+    `;
+  }
+
+  function escapeAttr(s) {
+    return String(s || '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;');
+  }
+
+  function formatTime(ts) {
+    const d = new Date(ts);
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  // === Card events ===
+  function bindCardEvents() {
+    listEl.querySelectorAll('.card').forEach(cardEl => {
+      const id = cardEl.dataset.id;
+
+      cardEl.querySelector('[data-action="delete-card"]').addEventListener('click', () => {
+        confirmSheet('删除这条反馈？', '该条目下的截图、文字将一并移除，且无法恢复。', () => {
+          state = state.filter(it => it.id !== id);
+          save();
+          render();
+          toast('已删除');
+        });
+      });
+
+      cardEl.querySelectorAll('textarea[data-field]').forEach(ta => {
+        ta.addEventListener('input', (e) => {
+          const item = state.find(it => it.id === id);
+          if (!item) return;
+          item[ta.dataset.field] = e.target.value;
+          save();
+        });
+      });
+
+      cardEl.querySelector('[data-action="add-media"]').addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files || []);
+        e.target.value = '';
+        const item = state.find(it => it.id === id);
+        if (!item) return;
+        for (const f of files) {
+          if (f.size > MAX_FILE_BYTES) {
+            toast(`${f.name} 超过 8MB，已跳过`);
+            continue;
+          }
+          try {
+            const dataUrl = await readAsDataURL(f);
+            item.media.push({
+              id: uid(),
+              name: f.name,
+              type: f.type || 'application/octet-stream',
+              dataUrl
+            });
+          } catch (err) {
+            toast('读取失败：' + f.name);
+          }
+        }
+        save();
+        render();
+      });
+
+      cardEl.querySelectorAll('[data-action="remove-media"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const mediaId = btn.dataset.mediaId;
+          const item = state.find(it => it.id === id);
+          if (!item) return;
+          item.media = item.media.filter(m => m.id !== mediaId);
+          save();
+          render();
+        });
+      });
+
+      cardEl.querySelectorAll('[data-action="preview-media"]').forEach(tile => {
+        tile.addEventListener('click', () => {
+          const mediaId = tile.dataset.mediaId;
+          const item = state.find(it => it.id === id);
+          if (!item) return;
+          const media = item.media.find(m => m.id === mediaId);
+          if (media) openPreview(media);
+        });
+      });
+    });
+  }
+
+  function readAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = () => reject(r.error);
+      r.readAsDataURL(file);
+    });
+  }
+
+  // === Preview modal ===
+  const modal = document.getElementById('modal');
+  const modalContent = document.getElementById('modal-content');
+
+  function openPreview(media) {
+    const isVideo = media.type.startsWith('video/');
+    modalContent.innerHTML = isVideo
+      ? `<video src="${media.dataUrl}" controls autoplay playsinline></video>
+         <button class="modal-close" id="modal-close-btn">关闭</button>`
+      : `<img src="${media.dataUrl}" alt="" />
+         <button class="modal-close" id="modal-close-btn">关闭</button>`;
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.getElementById('modal-close-btn').addEventListener('click', closePreview);
+  }
+  function closePreview() {
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    modalContent.innerHTML = '';
+  }
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closePreview();
+  });
+
+  // === Confirm sheet ===
+  const sheet = document.getElementById('sheet');
+  const sheetMask = document.getElementById('sheet-mask');
+  const sheetTitle = document.getElementById('sheet-title');
+  const sheetDesc = document.getElementById('sheet-desc');
+  const sheetConfirm = document.getElementById('sheet-confirm');
+  const sheetCancel = document.getElementById('sheet-cancel');
+  let sheetCb = null;
+
+  function confirmSheet(title, desc, cb) {
+    sheetTitle.textContent = title;
+    sheetDesc.textContent = desc;
+    sheetCb = cb;
+    sheet.classList.add('open');
+    sheetMask.classList.add('open');
+  }
+  function closeSheet() {
+    sheet.classList.remove('open');
+    sheetMask.classList.remove('open');
+    sheetCb = null;
+  }
+  sheetCancel.addEventListener('click', closeSheet);
+  sheetMask.addEventListener('click', closeSheet);
+  sheetConfirm.addEventListener('click', () => {
+    if (typeof sheetCb === 'function') sheetCb();
+    closeSheet();
+  });
+
+  // === Toast ===
+  const toastEl = document.getElementById('toast');
+  let toastTimer = null;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1800);
+  }
+
+  // === Add ===
+  document.getElementById('btn-add').addEventListener('click', () => {
+    state.push({
+      id: uid(),
+      media: [],
+      problem: '',
+      solution: '',
+      createdAt: Date.now()
+    });
+    save();
+    render();
+    // scroll to bottom
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    });
+  });
+
+  // === Clear ===
+  document.getElementById('btn-clear').addEventListener('click', () => {
+    if (state.length === 0) {
+      toast('当前没有内容');
+      return;
+    }
+    confirmSheet('清空全部反馈？', '所有反馈条目、截图和文字将被永久删除。', () => {
+      state = [];
+      save();
+      render();
+      toast('已清空');
+    });
+  });
+
+  // === Export Markdown ===
+  document.getElementById('btn-export').addEventListener('click', () => {
+    if (state.length === 0) {
+      toast('当前没有内容');
+      return;
+    }
+    const md = buildMarkdown(state);
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `feedback-${stamp}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    toast('已导出 Markdown');
+  });
+
+  function buildMarkdown(items) {
+    const lines = [];
+    const now = new Date();
+    lines.push(`# 问题反馈`);
+    lines.push('');
+    lines.push(`> 生成于 ${formatTime(now.getTime())} · 共 ${items.length} 条`);
+    lines.push('');
+    items.forEach((item, i) => {
+      lines.push(`## No.${String(i + 1).padStart(2, '0')}`);
+      lines.push('');
+      lines.push(`*${formatTime(item.createdAt)}*`);
+      lines.push('');
+
+      lines.push(`### 🟠 截图 / 视频`);
+      lines.push('');
+      if (item.media.length === 0) {
+        lines.push('_无_');
+      } else {
+        item.media.forEach((m, idx) => {
+          if (m.type.startsWith('image/')) {
+            lines.push(`![${m.name || 'image-' + (idx + 1)}](${m.dataUrl})`);
+          } else {
+            lines.push(`📹 **${m.name || 'video-' + (idx + 1)}** _(视频，Markdown 中无法直接预览)_`);
+          }
+          lines.push('');
+        });
+      }
+      lines.push('');
+
+      lines.push(`### 🔴 问题描述`);
+      lines.push('');
+      lines.push(item.problem.trim() || '_无_');
+      lines.push('');
+
+      lines.push(`### 🟢 解决方案`);
+      lines.push('');
+      lines.push(item.solution.trim() || '_无_');
+      lines.push('');
+
+      if (i < items.length - 1) {
+        lines.push('---');
+        lines.push('');
+      }
+    });
+    return lines.join('\n');
+  }
+
+  // === Init ===
+  render();
+
+  // Prevent double-tap zoom on buttons / textareas while keeping pinch-zoom off in viewport.
+  document.addEventListener('gesturestart', (e) => e.preventDefault());
+})();
+</script>
+
+</body>
+</html>

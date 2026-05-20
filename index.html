@@ -479,6 +479,135 @@
   }
   .sheet-btn:active { opacity: 0.8; }
 
+  /* === Form modal (bottom sheet, near-fullscreen) === */
+  .form-mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 16, 10, 0.45);
+    z-index: 80;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+  }
+  .form-mask.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .form-modal {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: calc(var(--safe-top) + 16px);
+    background: var(--bg);
+    border-radius: 22px 22px 0 0;
+    z-index: 90;
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+  }
+  .form-modal.open { transform: translateY(0); }
+
+  .form-modal-head {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--line-soft);
+    position: relative;
+  }
+  .form-modal-head::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--line);
+  }
+  .form-modal-title {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 20px;
+    letter-spacing: -0.005em;
+    margin: 0;
+  }
+  .form-close {
+    appearance: none;
+    background: var(--card);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0 2px;
+    font-family: var(--mono);
+  }
+  .form-close:active { background: var(--bg-soft); }
+
+  .form-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 4px 16px;
+  }
+  .form-modal-body .section + .section { border-top: 1px dashed var(--line); }
+
+  .form-modal-foot {
+    flex-shrink: 0;
+    display: flex;
+    gap: 10px;
+    padding: 12px 18px calc(var(--safe-bottom) + 14px);
+    border-top: 1px solid var(--line-soft);
+    background: var(--bg);
+  }
+  .sheet-btn.primary {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 14px;
+  }
+
+  .section-label .required {
+    color: var(--danger);
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 10px;
+    margin-left: 6px;
+    letter-spacing: 0.05em;
+    text-transform: none;
+  }
+
+  /* === Read-only card text === */
+  .readonly-text {
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--ink);
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding: 2px 0;
+    min-height: 20px;
+  }
+  .readonly-text.empty {
+    color: #b8ad99;
+    font-style: italic;
+  }
+
   /* small screens */
   @media (max-width: 360px) {
     .app-title { font-size: 24px; }
@@ -512,7 +641,7 @@
   <div id="empty-state" class="empty-state" hidden>
     <div class="emoji">¶</div>
     <h2>还没有反馈</h2>
-    <p>点击底部按钮，记录第一条问题</p>
+    <p>点击下方按钮添加第一条</p>
   </div>
 </main>
 
@@ -526,6 +655,33 @@
 <!-- Preview modal -->
 <div class="modal" id="modal" role="dialog" aria-hidden="true">
   <div class="modal-content" id="modal-content"></div>
+</div>
+
+<!-- Add-feedback form modal -->
+<div class="form-mask" id="form-mask"></div>
+<div class="form-modal" id="form-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="form-modal-title">
+  <header class="form-modal-head">
+    <h2 class="form-modal-title" id="form-modal-title">新增反馈</h2>
+    <button class="form-close" id="form-close" aria-label="关闭">×</button>
+  </header>
+  <div class="form-modal-body">
+    <section class="section">
+      <div class="section-label"><span class="dot dot-media"></span> 截图 / 视频</div>
+      <div class="media-grid" id="form-media-grid"></div>
+    </section>
+    <section class="section">
+      <div class="section-label"><span class="dot dot-problem"></span> 问题描述 <span class="required">必填</span></div>
+      <textarea id="form-problem" placeholder="发生了什么？复现步骤、预期与实际…"></textarea>
+    </section>
+    <section class="section">
+      <div class="section-label"><span class="dot dot-solution"></span> 解决方案</div>
+      <textarea id="form-solution" placeholder="建议怎么改？为什么？"></textarea>
+    </section>
+  </div>
+  <footer class="form-modal-foot">
+    <button class="sheet-btn" id="form-cancel">取消</button>
+    <button class="sheet-btn primary" id="form-submit">提交反馈</button>
+  </footer>
 </div>
 
 <!-- Confirm sheet -->
@@ -593,6 +749,8 @@
   }
 
   function renderCard(item, i) {
+    const hasProblem = item.problem && item.problem.trim();
+    const hasSolution = item.solution && item.solution.trim();
     return `
       <article class="card" data-id="${item.id}">
         <div class="card-head">
@@ -602,29 +760,25 @@
 
         <section class="section">
           <div class="section-label"><span class="dot dot-media"></span> 截图 / 视频</div>
-          <div class="media-grid">
-            ${item.media.map(m => renderTile(m)).join('')}
-            <label class="media-add">
-              <input type="file" accept="image/*,video/*" multiple data-action="add-media" />
-              +
-            </label>
-          </div>
+          ${item.media.length === 0
+            ? `<div class="readonly-text empty">无</div>`
+            : `<div class="media-grid">${item.media.map(m => renderTileReadonly(m)).join('')}</div>`}
         </section>
 
         <section class="section">
           <div class="section-label"><span class="dot dot-problem"></span> 问题描述</div>
-          <textarea data-field="problem" placeholder="发生了什么？复现步骤、预期与实际…">${escapeAttr(item.problem)}</textarea>
+          <div class="readonly-text${hasProblem ? '' : ' empty'}">${hasProblem ? escapeAttr(item.problem) : '无'}</div>
         </section>
 
         <section class="section">
           <div class="section-label"><span class="dot dot-solution"></span> 解决方案</div>
-          <textarea data-field="solution" placeholder="建议怎么改？为什么？">${escapeAttr(item.solution)}</textarea>
+          <div class="readonly-text${hasSolution ? '' : ' empty'}">${hasSolution ? escapeAttr(item.solution) : '无'}</div>
         </section>
       </article>
     `;
   }
 
-  function renderTile(m) {
+  function renderTileReadonly(m) {
     const isVideo = m.type.startsWith('video/');
     const inner = isVideo
       ? `<video src="${m.dataUrl}" muted playsinline></video><span class="video-badge">VIDEO</span>`
@@ -632,7 +786,6 @@
     return `
       <div class="media-tile" data-action="preview-media" data-media-id="${m.id}">
         ${inner}
-        <button class="media-remove" data-action="remove-media" data-media-id="${m.id}" aria-label="删除">×</button>
       </div>
     `;
   }
@@ -650,7 +803,7 @@
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
-  // === Card events ===
+  // === Card events (read-only: delete + preview only) ===
   function bindCardEvents() {
     listEl.querySelectorAll('.card').forEach(cardEl => {
       const id = cardEl.dataset.id;
@@ -661,53 +814,6 @@
           save();
           render();
           toast('已删除');
-        });
-      });
-
-      cardEl.querySelectorAll('textarea[data-field]').forEach(ta => {
-        ta.addEventListener('input', (e) => {
-          const item = state.find(it => it.id === id);
-          if (!item) return;
-          item[ta.dataset.field] = e.target.value;
-          save();
-        });
-      });
-
-      cardEl.querySelector('[data-action="add-media"]').addEventListener('change', async (e) => {
-        const files = Array.from(e.target.files || []);
-        e.target.value = '';
-        const item = state.find(it => it.id === id);
-        if (!item) return;
-        for (const f of files) {
-          if (f.size > MAX_FILE_BYTES) {
-            toast(`${f.name} 超过 8MB，已跳过`);
-            continue;
-          }
-          try {
-            const dataUrl = await readAsDataURL(f);
-            item.media.push({
-              id: uid(),
-              name: f.name,
-              type: f.type || 'application/octet-stream',
-              dataUrl
-            });
-          } catch (err) {
-            toast('读取失败：' + f.name);
-          }
-        }
-        save();
-        render();
-      });
-
-      cardEl.querySelectorAll('[data-action="remove-media"]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const mediaId = btn.dataset.mediaId;
-          const item = state.find(it => it.id === id);
-          if (!item) return;
-          item.media = item.media.filter(m => m.id !== mediaId);
-          save();
-          render();
         });
       });
 
@@ -794,22 +900,133 @@
     toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1800);
   }
 
-  // === Add ===
-  document.getElementById('btn-add').addEventListener('click', () => {
+  // === Add-feedback form modal ===
+  let draft = { media: [] };
+  const formMask = document.getElementById('form-mask');
+  const formModal = document.getElementById('form-modal');
+  const formMediaGrid = document.getElementById('form-media-grid');
+  const formProblem = document.getElementById('form-problem');
+  const formSolution = document.getElementById('form-solution');
+
+  function openForm() {
+    draft = { media: [] };
+    formProblem.value = '';
+    formSolution.value = '';
+    renderFormMedia();
+    formMask.classList.add('open');
+    formModal.classList.add('open');
+    formModal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeForm() {
+    formMask.classList.remove('open');
+    formModal.classList.remove('open');
+    formModal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  function formIsDirty() {
+    return draft.media.length > 0
+      || formProblem.value.trim().length > 0
+      || formSolution.value.trim().length > 0;
+  }
+
+  function attemptCloseForm() {
+    if (formIsDirty()) {
+      confirmSheet('放弃这条反馈？', '已填写的内容将不会保存。', closeForm);
+    } else {
+      closeForm();
+    }
+  }
+
+  function submitForm() {
+    const problem = formProblem.value.trim();
+    if (!problem) {
+      toast('请填写问题描述');
+      formProblem.focus();
+      return;
+    }
     state.push({
       id: uid(),
-      media: [],
-      problem: '',
-      solution: '',
+      media: draft.media.slice(),
+      problem,
+      solution: formSolution.value.trim(),
       createdAt: Date.now()
     });
     save();
     render();
-    // scroll to bottom
+    closeForm();
+    toast('已添加');
     requestAnimationFrame(() => {
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     });
-  });
+  }
+
+  function renderFormMedia() {
+    const tiles = draft.media.map(m => {
+      const isVideo = m.type.startsWith('video/');
+      const inner = isVideo
+        ? `<video src="${m.dataUrl}" muted playsinline></video><span class="video-badge">VIDEO</span>`
+        : `<img src="${m.dataUrl}" alt="${escapeAttr(m.name)}" />`;
+      return `
+        <div class="media-tile" data-action="form-preview" data-media-id="${m.id}">
+          ${inner}
+          <button class="media-remove" data-action="form-remove" data-media-id="${m.id}" aria-label="删除">×</button>
+        </div>
+      `;
+    }).join('');
+    formMediaGrid.innerHTML = tiles + `
+      <label class="media-add">
+        <input type="file" accept="image/*,video/*" multiple id="form-media-input" />
+        +
+      </label>
+    `;
+
+    formMediaGrid.querySelectorAll('[data-action="form-preview"]').forEach(tile => {
+      tile.addEventListener('click', (e) => {
+        if (e.target.closest('[data-action="form-remove"]')) return;
+        const m = draft.media.find(x => x.id === tile.dataset.mediaId);
+        if (m) openPreview(m);
+      });
+    });
+    formMediaGrid.querySelectorAll('[data-action="form-remove"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        draft.media = draft.media.filter(m => m.id !== btn.dataset.mediaId);
+        renderFormMedia();
+      });
+    });
+    const input = document.getElementById('form-media-input');
+    input.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []);
+      e.target.value = '';
+      for (const f of files) {
+        if (f.size > MAX_FILE_BYTES) {
+          toast(`${f.name} 超过 8MB，已跳过`);
+          continue;
+        }
+        try {
+          const dataUrl = await readAsDataURL(f);
+          draft.media.push({
+            id: uid(),
+            name: f.name,
+            type: f.type || 'application/octet-stream',
+            dataUrl
+          });
+        } catch (err) {
+          toast('读取失败：' + f.name);
+        }
+      }
+      renderFormMedia();
+    });
+  }
+
+  document.getElementById('btn-add').addEventListener('click', openForm);
+  document.getElementById('form-close').addEventListener('click', attemptCloseForm);
+  document.getElementById('form-cancel').addEventListener('click', attemptCloseForm);
+  document.getElementById('form-submit').addEventListener('click', submitForm);
+  // Intentionally do NOT close on mask click — avoid accidental input loss.
 
   // === Clear ===
   document.getElementById('btn-clear').addEventListener('click', () => {

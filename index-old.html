@@ -172,6 +172,20 @@
     margin-left: 8px;
     letter-spacing: 0.04em;
   }
+  .card-delete {
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: var(--ink-muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+  }
+  .card-delete:active { background: var(--bg-soft); color: var(--danger); }
+
   .section { padding: 10px 16px 14px; }
   .section + .section { border-top: 1px dashed var(--line); }
 
@@ -732,45 +746,6 @@
     .cat-select { flex: 0 0 130px; width: 130px; }
   }
 
-  /* === Card action buttons (edit + delete) === */
-  .card-actions {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-  }
-  .card-icon-btn {
-    appearance: none;
-    background: transparent;
-    border: none;
-    color: var(--ink-muted);
-    padding: 6px 8px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.04em;
-    line-height: 1;
-  }
-  .card-icon-btn svg {
-    width: 15px;
-    height: 15px;
-    display: block;
-  }
-  .card-icon-btn:active { background: var(--bg-soft); color: var(--accent); }
-  .card-icon-btn.danger:active { color: var(--danger); }
-
-  /* === Sheet stack (vertical) variant for action menus === */
-  .sheet-actions.sheet-actions-stack {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
-  .sheet-actions.sheet-actions-stack .sheet-btn { flex: 0 0 auto; width: 100%; }
-  .sheet-actions + .sheet-actions { margin-top: 8px; }
-
   /* small screens */
   @media (max-width: 360px) {
     .app-title { font-size: 24px; }
@@ -785,10 +760,10 @@
   <div class="app-header-row">
     <div>
       <h1 class="app-title">Feedback Log</h1>
-      <div class="app-subtitle"><span id="meta-info">已记录 0 条 · 约 0 MB</span></div>
+      <div class="app-subtitle">问题反馈 · <span id="count-badge">0 条</span></div>
     </div>
     <div class="header-actions">
-      <button class="icon-btn" id="btn-export" aria-label="导出 / 备份">
+      <button class="icon-btn" id="btn-export" aria-label="导出">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         导出
       </button>
@@ -867,34 +842,15 @@
   </div>
 </div>
 
-<!-- Generic action sheet (导出/备份 菜单、导入策略 选择 共用) -->
-<div class="sheet-mask" id="action-mask"></div>
-<div class="sheet" id="action-sheet" role="dialog" aria-hidden="true">
-  <h3 id="action-sheet-title">操作</h3>
-  <p id="action-sheet-desc"></p>
-  <div class="sheet-actions sheet-actions-stack" id="action-sheet-items"></div>
-  <div class="sheet-actions">
-    <button class="sheet-btn" id="action-sheet-cancel">取消</button>
-  </div>
-</div>
-
-<!-- Hidden file input for JSON import -->
-<input type="file" id="import-file-input" accept="application/json,.json" hidden />
-
 <div class="toast" id="toast">已保存</div>
 
 <script>
 (() => {
-  const LS_LEGACY_KEY = 'feedback-h5-v1';
-  const DB_NAME = 'feedback-h5-db';
-  const DB_VERSION = 1;
-  const STORE_NAME = 'feedbacks';
-  const VIDEO_WARN_BYTES = 50 * 1024 * 1024; // 50MB
-  const IMG_MAX_DIM = 1920;
-  const IMG_QUALITY = 0.85;
+  const STORAGE_KEY = 'feedback-h5-v1';
+  const MAX_FILE_BYTES = 8 * 1024 * 1024; // 8MB per file, to keep localStorage usable
 
   const CATEGORIES = [
-    '排名', '拓展', 'bug', '闪退', '优化建议',
+    '年排名', '拓展', 'bug', '闪退', '优化建议',
     '上架', '下架', '验证码', '素材',
     '批量操作', '筛选', '编辑', '数据看板', '查询',
     '展示', '广告位', '客户名称',
@@ -905,187 +861,55 @@
     'bug': 'red', '闪退': 'red',
     '优化建议': 'green', '功能设置': 'green',
     '拓展': 'blue', '上架': 'blue', '下架': 'blue', '编辑': 'blue', '批量操作': 'blue', '筛选': 'blue',
-    '排名': 'amber', '数据看板': 'amber', '查询': 'amber', '展示': 'amber', '广告位': 'amber', '广告类型': 'amber', '客户名称': 'amber',
+    '年排名': 'amber', '数据看板': 'amber', '查询': 'amber', '展示': 'amber', '广告位': 'amber', '广告类型': 'amber', '客户名称': 'amber',
     '验证码': 'neutral', '素材': 'neutral', '其他': 'neutral'
   };
 
   let activeFilter = 'all';
-  let editingId = null;
-  let state = [];
+  let state = load();
+
+  // === Storage ===
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map(it => ({
+        id: typeof it.id === 'string' ? it.id : uid(),
+        title: typeof it.title === 'string' ? it.title : '',
+        category: typeof it.category === 'string' && it.category ? it.category : DEFAULT_CATEGORY,
+        media: Array.isArray(it.media) ? it.media : [],
+        problem: typeof it.problem === 'string' ? it.problem : '',
+        solution: typeof it.solution === 'string' ? it.solution : '',
+        createdAt: typeof it.createdAt === 'number' ? it.createdAt : Date.now()
+      }));
+    } catch (e) {
+      console.warn('load failed', e);
+      return [];
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      toast('存储空间不足，请删除部分文件');
+      console.warn('save failed', e);
+    }
+  }
 
   function uid() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   }
 
-  // === IndexedDB ===
-  let _dbPromise = null;
-  function getDB() {
-    if (_dbPromise) return _dbPromise;
-    _dbPromise = new Promise((resolve, reject) => {
-      const req = indexedDB.open(DB_NAME, DB_VERSION);
-      req.onupgradeneeded = (e) => {
-        const db = e.target.result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-        }
-      };
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-      req.onblocked = () => reject(new Error('数据库被阻塞'));
-    });
-    return _dbPromise;
-  }
-
-  async function dbGet(id) {
-    const db = await getDB();
-    return new Promise((res, rej) => {
-      const t = db.transaction(STORE_NAME, 'readonly');
-      const r = t.objectStore(STORE_NAME).get(id);
-      r.onsuccess = () => res(r.result);
-      t.onerror = () => rej(t.error);
-      t.onabort = () => rej(t.error);
-    });
-  }
-  async function dbGetAll() {
-    const db = await getDB();
-    return new Promise((res, rej) => {
-      const t = db.transaction(STORE_NAME, 'readonly');
-      const r = t.objectStore(STORE_NAME).getAll();
-      r.onsuccess = () => res(r.result || []);
-      t.onerror = () => rej(t.error);
-      t.onabort = () => rej(t.error);
-    });
-  }
-  async function dbPut(item) {
-    const db = await getDB();
-    return new Promise((res, rej) => {
-      const t = db.transaction(STORE_NAME, 'readwrite');
-      t.objectStore(STORE_NAME).put(item);
-      t.oncomplete = () => res();
-      t.onerror = () => rej(t.error);
-      t.onabort = () => rej(t.error);
-    });
-  }
-  async function dbPutMany(items) {
-    const db = await getDB();
-    return new Promise((res, rej) => {
-      const t = db.transaction(STORE_NAME, 'readwrite');
-      const store = t.objectStore(STORE_NAME);
-      items.forEach(it => store.put(it));
-      t.oncomplete = () => res();
-      t.onerror = () => rej(t.error);
-      t.onabort = () => rej(t.error);
-    });
-  }
-  async function dbDelete(id) {
-    const db = await getDB();
-    return new Promise((res, rej) => {
-      const t = db.transaction(STORE_NAME, 'readwrite');
-      t.objectStore(STORE_NAME).delete(id);
-      t.oncomplete = () => res();
-      t.onerror = () => rej(t.error);
-      t.onabort = () => rej(t.error);
-    });
-  }
-  async function dbClear() {
-    const db = await getDB();
-    return new Promise((res, rej) => {
-      const t = db.transaction(STORE_NAME, 'readwrite');
-      t.objectStore(STORE_NAME).clear();
-      t.oncomplete = () => res();
-      t.onerror = () => rej(t.error);
-      t.onabort = () => rej(t.error);
-    });
-  }
-
-  // === Normalization ===
-  function migrateCategory(cat) {
-    if (typeof cat !== 'string' || !cat) return DEFAULT_CATEGORY;
-    if (cat === '年排名') return '排名'; // legacy rename
-    return CATEGORIES.includes(cat) ? cat : DEFAULT_CATEGORY;
-  }
-
-  function normalizeMedia(m) {
-    if (!m || typeof m !== 'object') return null;
-    const dataUrl = typeof m.dataUrl === 'string' ? m.dataUrl : '';
-    if (!dataUrl) return null;
-    return {
-      id: typeof m.id === 'string' && m.id ? m.id : uid(),
-      name: typeof m.name === 'string' ? m.name : '',
-      type: typeof m.type === 'string' ? m.type : 'application/octet-stream',
-      dataUrl
-    };
-  }
-
-  // Accepts both internal shape (problem) and import shape (description).
-  function normalizeItem(it) {
-    if (!it || typeof it !== 'object') it = {};
-    const media = Array.isArray(it.media) ? it.media.map(normalizeMedia).filter(Boolean) : [];
-    const problem = typeof it.problem === 'string' ? it.problem
-                  : typeof it.description === 'string' ? it.description
-                  : '';
-    return {
-      id: typeof it.id === 'string' && it.id ? it.id : uid(),
-      title: typeof it.title === 'string' ? it.title : '',
-      category: migrateCategory(it.category),
-      media,
-      problem,
-      solution: typeof it.solution === 'string' ? it.solution : '',
-      createdAt: typeof it.createdAt === 'number' ? it.createdAt : Date.now()
-    };
-  }
-
-  async function migrateFromLocalStorage() {
-    const raw = localStorage.getItem(LS_LEGACY_KEY);
-    if (!raw) return;
-    let parsed;
-    try {
-      parsed = JSON.parse(raw);
-    } catch (e) {
-      toast('旧数据迁移失败：JSON 解析错误');
-      console.warn('legacy parse failed', e);
-      return;
-    }
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      localStorage.removeItem(LS_LEGACY_KEY);
-      return;
-    }
-    const items = parsed.map(normalizeItem);
-    try {
-      await dbPutMany(items);
-      localStorage.removeItem(LS_LEGACY_KEY);
-      toast(`已迁移 ${items.length} 条旧数据到 IndexedDB`);
-    } catch (e) {
-      toast('旧数据迁移失败：' + (e?.message || e));
-      console.warn('migration failed', e);
-    }
-  }
-
   // === Render ===
   const listEl = document.getElementById('feedback-list');
   const emptyEl = document.getElementById('empty-state');
-  const metaInfoEl = document.getElementById('meta-info');
+  const countEl = document.getElementById('count-badge');
   const filterBarEl = document.getElementById('filter-bar');
   const emptyTitleEl = emptyEl.querySelector('h2');
   const emptyDescEl = emptyEl.querySelector('p');
-
-  function estimateSizeMB() {
-    let bytes = 0;
-    state.forEach(it => {
-      bytes += (it.title?.length || 0)
-            + (it.problem?.length || 0)
-            + (it.solution?.length || 0)
-            + (it.category?.length || 0);
-      (it.media || []).forEach(m => {
-        bytes += (m.dataUrl?.length || 0) + (m.name?.length || 0);
-      });
-    });
-    return (bytes / 1024 / 1024).toFixed(1);
-  }
-
-  function updateMetaInfo() {
-    metaInfoEl.textContent = `已记录 ${state.length} 条 · 约 ${estimateSizeMB()} MB`;
-  }
 
   function getCategoryOf(item) {
     return (item.category && CATEGORIES.includes(item.category)) ? item.category : DEFAULT_CATEGORY;
@@ -1122,7 +946,7 @@
   }
 
   function render() {
-    updateMetaInfo();
+    countEl.textContent = state.length + ' 条';
     // Reset filter if current selection no longer has any items
     if (activeFilter !== 'all' && !state.some(it => getCategoryOf(it) === activeFilter)) {
       activeFilter = 'all';
@@ -1160,12 +984,7 @@
       <article class="card" data-id="${item.id}">
         <div class="card-head">
           <div class="card-index">No.${String(i + 1).padStart(2, '0')} <span>${formatTime(item.createdAt)}</span></div>
-          <div class="card-actions">
-            <button class="card-icon-btn" data-action="edit-card" aria-label="编辑" title="编辑">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-            </button>
-            <button class="card-icon-btn danger" data-action="delete-card" aria-label="删除" title="删除">删除</button>
-          </div>
+          <button class="card-delete" data-action="delete-card">删除</button>
         </div>
         <div class="card-title-row">
           <h3 class="card-title${titleEmptyClass}">${escapeAttr(titleDisplay)}</h3>
@@ -1217,26 +1036,15 @@
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
-  // === Card events (read-only: edit + delete + preview) ===
+  // === Card events (read-only: delete + preview only) ===
   function bindCardEvents() {
     listEl.querySelectorAll('.card').forEach(cardEl => {
       const id = cardEl.dataset.id;
 
-      cardEl.querySelector('[data-action="edit-card"]').addEventListener('click', () => {
-        const item = state.find(it => it.id === id);
-        if (!item) return;
-        openForm(item);
-      });
-
       cardEl.querySelector('[data-action="delete-card"]').addEventListener('click', () => {
-        confirmSheet('删除这条反馈？', '该条目下的截图、文字将一并移除，且无法恢复。', async () => {
-          try {
-            await dbDelete(id);
-          } catch (e) {
-            toast('删除失败：' + (e?.message || e));
-            return;
-          }
+        confirmSheet('删除这条反馈？', '该条目下的截图、文字将一并移除，且无法恢复。', () => {
           state = state.filter(it => it.id !== id);
+          save();
           render();
           toast('已删除');
         });
@@ -1294,71 +1102,26 @@
   const sheetDesc = document.getElementById('sheet-desc');
   const sheetConfirm = document.getElementById('sheet-confirm');
   const sheetCancel = document.getElementById('sheet-cancel');
-  let sheetConfirmCb = null;
-  let sheetCancelCb = null;
+  let sheetCb = null;
 
-  function confirmSheet(title, desc, onConfirm, onCancel = null) {
+  function confirmSheet(title, desc, cb) {
     sheetTitle.textContent = title;
     sheetDesc.textContent = desc;
-    sheetConfirmCb = onConfirm;
-    sheetCancelCb = onCancel;
+    sheetCb = cb;
     sheet.classList.add('open');
     sheetMask.classList.add('open');
   }
-  function dismissSheet(confirmed) {
-    const cb = confirmed ? sheetConfirmCb : sheetCancelCb;
-    sheetConfirmCb = null;
-    sheetCancelCb = null;
+  function closeSheet() {
     sheet.classList.remove('open');
     sheetMask.classList.remove('open');
-    if (typeof cb === 'function') cb();
+    sheetCb = null;
   }
-  sheetCancel.addEventListener('click', () => dismissSheet(false));
-  sheetMask.addEventListener('click', () => dismissSheet(false));
-  sheetConfirm.addEventListener('click', () => dismissSheet(true));
-
-  function confirmPromise(title, desc) {
-    return new Promise(resolve => {
-      confirmSheet(title, desc, () => resolve(true), () => resolve(false));
-    });
-  }
-
-  // === Action sheet (multi-option menu) ===
-  const actionSheet = document.getElementById('action-sheet');
-  const actionMask = document.getElementById('action-mask');
-  const actionSheetTitle = document.getElementById('action-sheet-title');
-  const actionSheetDesc = document.getElementById('action-sheet-desc');
-  const actionSheetItems = document.getElementById('action-sheet-items');
-  const actionSheetCancel = document.getElementById('action-sheet-cancel');
-
-  function openActionSheet({ title, desc = '', actions }) {
-    actionSheetTitle.textContent = title;
-    actionSheetDesc.textContent = desc;
-    actionSheetDesc.style.display = desc ? '' : 'none';
-    actionSheetItems.innerHTML = actions.map((a, i) => {
-      const cls = a.variant === 'danger' ? 'danger' : (a.variant === 'primary' ? 'primary' : '');
-      return `<button class="sheet-btn ${cls}" data-action-idx="${i}">${escapeAttr(a.label)}</button>`;
-    }).join('');
-    actionSheetItems.querySelectorAll('[data-action-idx]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const idx = parseInt(btn.dataset.actionIdx, 10);
-        closeActionSheet();
-        const a = actions[idx];
-        if (a && typeof a.onTap === 'function') a.onTap();
-      });
-    });
-    actionSheet.classList.add('open');
-    actionMask.classList.add('open');
-    actionSheet.setAttribute('aria-hidden', 'false');
-  }
-  function closeActionSheet() {
-    actionSheet.classList.remove('open');
-    actionMask.classList.remove('open');
-    actionSheet.setAttribute('aria-hidden', 'true');
-    actionSheetItems.innerHTML = '';
-  }
-  actionSheetCancel.addEventListener('click', closeActionSheet);
-  actionMask.addEventListener('click', closeActionSheet);
+  sheetCancel.addEventListener('click', closeSheet);
+  sheetMask.addEventListener('click', closeSheet);
+  sheetConfirm.addEventListener('click', () => {
+    if (typeof sheetCb === 'function') sheetCb();
+    closeSheet();
+  });
 
   // === Toast ===
   const toastEl = document.getElementById('toast');
@@ -1370,13 +1133,10 @@
     toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1800);
   }
 
-  // === Add / edit form modal ===
+  // === Add-feedback form modal ===
   let draft = { media: [] };
-  let formOriginal = null; // snapshot for dirty-check
   const formMask = document.getElementById('form-mask');
   const formModal = document.getElementById('form-modal');
-  const formModalTitle = document.getElementById('form-modal-title');
-  const formSubmitBtn = document.getElementById('form-submit');
   const formMediaGrid = document.getElementById('form-media-grid');
   const formTitle = document.getElementById('form-title');
   const formCategory = document.getElementById('form-category');
@@ -1388,38 +1148,13 @@
     `<option value="${escapeAttr(c)}"${c === DEFAULT_CATEGORY ? ' selected' : ''}>${escapeAttr(c)}</option>`
   ).join('');
 
-  function snapshotForm() {
-    return {
-      title: formTitle.value,
-      category: formCategory.value,
-      problem: formProblem.value,
-      solution: formSolution.value,
-      mediaIds: draft.media.map(m => m.id)
-    };
-  }
-
-  function openForm(item) {
-    if (item) {
-      editingId = item.id;
-      formTitle.value = item.title || '';
-      formCategory.value = CATEGORIES.includes(item.category) ? item.category : DEFAULT_CATEGORY;
-      formProblem.value = item.problem || '';
-      formSolution.value = item.solution || '';
-      draft = { media: (item.media || []).map(m => ({ ...m })) };
-      formModalTitle.textContent = '编辑反馈';
-      formSubmitBtn.textContent = '保存修改';
-    } else {
-      editingId = null;
-      formTitle.value = '';
-      formCategory.value = DEFAULT_CATEGORY;
-      formProblem.value = '';
-      formSolution.value = '';
-      draft = { media: [] };
-      formModalTitle.textContent = '新增反馈';
-      formSubmitBtn.textContent = '提交反馈';
-    }
+  function openForm() {
+    draft = { media: [] };
+    formTitle.value = '';
+    formCategory.value = DEFAULT_CATEGORY;
+    formProblem.value = '';
+    formSolution.value = '';
     renderFormMedia();
-    formOriginal = snapshotForm();
     formMask.classList.add('open');
     formModal.classList.add('open');
     formModal.setAttribute('aria-hidden', 'false');
@@ -1431,34 +1166,25 @@
     formModal.classList.remove('open');
     formModal.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
-    editingId = null;
-    formOriginal = null;
   }
 
   function formIsDirty() {
-    if (!formOriginal) return false;
-    if (formTitle.value !== formOriginal.title) return true;
-    if (formCategory.value !== formOriginal.category) return true;
-    if (formProblem.value !== formOriginal.problem) return true;
-    if (formSolution.value !== formOriginal.solution) return true;
-    const curr = draft.media.map(m => m.id);
-    if (curr.length !== formOriginal.mediaIds.length) return true;
-    for (let i = 0; i < curr.length; i++) {
-      if (curr[i] !== formOriginal.mediaIds[i]) return true;
-    }
-    return false;
+    return draft.media.length > 0
+      || formTitle.value.trim().length > 0
+      || formProblem.value.trim().length > 0
+      || formSolution.value.trim().length > 0
+      || formCategory.value !== DEFAULT_CATEGORY;
   }
 
   function attemptCloseForm() {
     if (formIsDirty()) {
-      const msg = editingId ? '放弃本次修改？' : '放弃这条反馈？';
-      confirmSheet(msg, '已填写或改动的内容将不会保存。', closeForm);
+      confirmSheet('放弃这条反馈？', '已填写的内容将不会保存。', closeForm);
     } else {
       closeForm();
     }
   }
 
-  async function submitForm() {
+  function submitForm() {
     const title = formTitle.value.trim();
     const problem = formProblem.value.trim();
     if (!title) {
@@ -1472,138 +1198,30 @@
       return;
     }
     const category = CATEGORIES.includes(formCategory.value) ? formCategory.value : DEFAULT_CATEGORY;
-    let item;
-    if (editingId) {
-      const existing = state.find(it => it.id === editingId);
-      item = {
-        id: editingId,
-        title,
-        category,
-        media: draft.media.slice(),
-        problem,
-        solution: formSolution.value.trim(),
-        createdAt: existing ? existing.createdAt : Date.now()
-      };
-    } else {
-      item = {
-        id: uid(),
-        title,
-        category,
-        media: draft.media.slice(),
-        problem,
-        solution: formSolution.value.trim(),
-        createdAt: Date.now()
-      };
-    }
-
-    formSubmitBtn.disabled = true;
-    try {
-      await dbPut(item);
-    } catch (e) {
-      formSubmitBtn.disabled = false;
-      toast('保存失败：' + (e?.message || e));
-      return; // keep modal open with input intact
-    }
-    formSubmitBtn.disabled = false;
-
-    const wasEditing = !!editingId;
-    if (wasEditing) {
-      const idx = state.findIndex(it => it.id === editingId);
-      if (idx >= 0) state[idx] = item;
-      else state.push(item);
-    } else {
-      state.push(item);
-    }
+    state.push({
+      id: uid(),
+      title,
+      category,
+      media: draft.media.slice(),
+      problem,
+      solution: formSolution.value.trim(),
+      createdAt: Date.now()
+    });
+    save();
     render();
     closeForm();
-    toast(wasEditing ? '已保存修改' : '已添加');
-    if (!wasEditing) {
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-      });
-    }
-  }
-
-  // === Image compression ===
-  function loadImage(src) {
-    return new Promise((res, rej) => {
-      const img = new Image();
-      img.onload = () => res(img);
-      img.onerror = () => rej(new Error('图片加载失败'));
-      img.src = src;
+    toast('已添加');
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     });
-  }
-
-  async function compressImage(file) {
-    // Skip GIF (animation) and SVG (vector) — keep as-is.
-    if (file.type === 'image/gif' || file.type === 'image/svg+xml') {
-      const dataUrl = await readAsDataURL(file);
-      return { dataUrl, type: file.type, name: file.name };
-    }
-    const dataUrl = await readAsDataURL(file);
-    let img;
-    try {
-      img = await loadImage(dataUrl);
-    } catch (e) {
-      // Fall back to original if decode failed.
-      return { dataUrl, type: file.type, name: file.name };
-    }
-    if (img.naturalWidth <= IMG_MAX_DIM && img.naturalHeight <= IMG_MAX_DIM) {
-      return { dataUrl, type: file.type, name: file.name };
-    }
-    const ratio = Math.min(IMG_MAX_DIM / img.naturalWidth, IMG_MAX_DIM / img.naturalHeight);
-    const w = Math.round(img.naturalWidth * ratio);
-    const h = Math.round(img.naturalHeight * ratio);
-    const canvas = document.createElement('canvas');
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0, w, h);
-    const compressed = canvas.toDataURL('image/jpeg', IMG_QUALITY);
-    return { dataUrl: compressed, type: 'image/jpeg', name: file.name };
-  }
-
-  async function addMediaFile(f) {
-    if (f.type.startsWith('image/')) {
-      try {
-        const r = await compressImage(f);
-        draft.media.push({ id: uid(), name: r.name, type: r.type, dataUrl: r.dataUrl });
-      } catch (e) {
-        toast('图片处理失败：' + f.name);
-      }
-      return;
-    }
-    if (f.type.startsWith('video/')) {
-      if (f.size > VIDEO_WARN_BYTES) {
-        const sizeMB = (f.size / 1024 / 1024).toFixed(1);
-        const ok = await confirmPromise(
-          `视频 ${sizeMB}MB，继续添加？`,
-          '超过 50MB 的视频会显著增大存储占用，并可能影响载入速度。'
-        );
-        if (!ok) return;
-      }
-      try {
-        const dataUrl = await readAsDataURL(f);
-        draft.media.push({
-          id: uid(),
-          name: f.name,
-          type: f.type || 'application/octet-stream',
-          dataUrl
-        });
-      } catch (e) {
-        toast('视频读取失败：' + f.name);
-      }
-      return;
-    }
-    toast('不支持的文件类型：' + (f.type || '未知'));
   }
 
   function renderFormMedia() {
     const tiles = draft.media.map(m => {
-      const isVideo = (m.type || '').startsWith('video/');
+      const isVideo = m.type.startsWith('video/');
       const inner = isVideo
         ? `<video src="${m.dataUrl}" muted playsinline></video><span class="video-badge">VIDEO</span>`
-        : `<img src="${m.dataUrl}" alt="${escapeAttr(m.name || '')}" />`;
+        : `<img src="${m.dataUrl}" alt="${escapeAttr(m.name)}" />`;
       return `
         <div class="media-tile" data-action="form-preview" data-media-id="${m.id}">
           ${inner}
@@ -1637,16 +1255,30 @@
       const files = Array.from(e.target.files || []);
       e.target.value = '';
       for (const f of files) {
-        await addMediaFile(f);
+        if (f.size > MAX_FILE_BYTES) {
+          toast(`${f.name} 超过 8MB，已跳过`);
+          continue;
+        }
+        try {
+          const dataUrl = await readAsDataURL(f);
+          draft.media.push({
+            id: uid(),
+            name: f.name,
+            type: f.type || 'application/octet-stream',
+            dataUrl
+          });
+        } catch (err) {
+          toast('读取失败：' + f.name);
+        }
       }
       renderFormMedia();
     });
   }
 
-  document.getElementById('btn-add').addEventListener('click', () => openForm(null));
+  document.getElementById('btn-add').addEventListener('click', openForm);
   document.getElementById('form-close').addEventListener('click', attemptCloseForm);
   document.getElementById('form-cancel').addEventListener('click', attemptCloseForm);
-  formSubmitBtn.addEventListener('click', submitForm);
+  document.getElementById('form-submit').addEventListener('click', submitForm);
   // Intentionally do NOT close on mask click — avoid accidental input loss.
 
   // === Clear ===
@@ -1655,114 +1287,33 @@
       toast('当前没有内容');
       return;
     }
-    confirmSheet('清空全部反馈？', '所有反馈条目、截图和文字将被永久删除。', async () => {
-      try {
-        await dbClear();
-      } catch (e) {
-        toast('清空失败：' + (e?.message || e));
-        return;
-      }
+    confirmSheet('清空全部反馈？', '所有反馈条目、截图和文字将被永久删除。', () => {
       state = [];
+      save();
       render();
       toast('已清空');
     });
   });
 
-  // === Export / Backup / Import menu ===
+  // === Export Markdown ===
   document.getElementById('btn-export').addEventListener('click', () => {
-    openActionSheet({
-      title: '导出 / 备份',
-      desc: '选择一种方式保存或恢复数据',
-      actions: [
-        { label: '导出 Markdown', onTap: exportMarkdown },
-        { label: '备份 JSON', onTap: backupJson },
-        { label: '导入备份…', onTap: triggerImport }
-      ]
-    });
-  });
-
-  function downloadBlob(blob, filename) {
+    if (state.length === 0) {
+      toast('当前没有内容');
+      return;
+    }
+    const md = buildMarkdown(state);
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
     a.href = url;
-    a.download = filename;
+    a.download = `feedback-${stamp}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 5000);
-  }
-
-  function exportMarkdown() {
-    if (state.length === 0) { toast('当前没有内容'); return; }
-    const md = buildMarkdown(state);
-    const stamp = new Date().toISOString().slice(0, 10);
-    downloadBlob(new Blob([md], { type: 'text/markdown;charset=utf-8' }), `feedback-${stamp}.md`);
     toast('已导出 Markdown');
-  }
-
-  function backupJson() {
-    if (state.length === 0) { toast('当前没有内容'); return; }
-    const json = JSON.stringify(state, null, 2);
-    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    downloadBlob(new Blob([json], { type: 'application/json;charset=utf-8' }), `feedback-backup-${stamp}.json`);
-    toast(`已备份 ${state.length} 条到 JSON`);
-  }
-
-  const importFileInput = document.getElementById('import-file-input');
-  function triggerImport() {
-    importFileInput.value = '';
-    importFileInput.click();
-  }
-  importFileInput.addEventListener('change', async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    let parsed;
-    try {
-      const text = await file.text();
-      parsed = JSON.parse(text);
-    } catch (err) {
-      toast('JSON 解析失败：' + err.message);
-      return;
-    }
-    if (!Array.isArray(parsed)) {
-      toast('备份文件格式不对（应为数组）');
-      return;
-    }
-    const items = parsed.map(normalizeItem);
-    if (items.length === 0) {
-      toast('备份文件里没有数据');
-      return;
-    }
-    openActionSheet({
-      title: `导入 ${items.length} 条反馈`,
-      desc: '选择导入方式',
-      actions: [
-        { label: '合并追加', variant: 'primary', onTap: () => doImport('merge', items) },
-        { label: '替换全部', variant: 'danger', onTap: () => doImport('replace', items) }
-      ]
-    });
   });
-
-  async function doImport(mode, items) {
-    try {
-      if (mode === 'replace') {
-        await dbClear();
-        await dbPutMany(items);
-        state = items.slice();
-      } else {
-        await dbPutMany(items);
-        const map = new Map(state.map(it => [it.id, it]));
-        items.forEach(it => map.set(it.id, it));
-        state = Array.from(map.values());
-      }
-      state.sort((a, b) => a.createdAt - b.createdAt);
-    } catch (e) {
-      toast('导入失败：' + (e?.message || e));
-      return;
-    }
-    render();
-    toast(`已导入 ${items.length} 条反馈`);
-  }
 
   function buildMarkdown(items) {
     const lines = [];
@@ -1814,26 +1365,7 @@
   }
 
   // === Init ===
-  // First render — empty list; bootstrap then re-render once data is loaded.
   render();
-
-  (async () => {
-    try {
-      await migrateFromLocalStorage();
-    } catch (e) {
-      toast('迁移异常：' + (e?.message || e));
-      console.warn(e);
-    }
-    try {
-      const all = await dbGetAll();
-      state = all.map(normalizeItem);
-      state.sort((a, b) => a.createdAt - b.createdAt);
-    } catch (e) {
-      toast('加载数据失败：' + (e?.message || e));
-      console.warn('dbGetAll failed', e);
-    }
-    render();
-  })();
 
   // Prevent double-tap zoom on buttons / textareas while keeping pinch-zoom off in viewport.
   document.addEventListener('gesturestart', (e) => e.preventDefault());

@@ -3115,8 +3115,17 @@
       window.scrollTo({ top: tabScrollPos[tab] || 0, behavior: 'auto' });
     });
   }
-  document.querySelectorAll('#tab-bar .tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  // Expose globally as a safety net (covers any inline onclick in cached HTML or
+  // future hand-added handlers; harmless duplication with the delegation below).
+  window.switchTab = switchTab;
+
+  // Use document-level event delegation. Works regardless of when buttons are
+  // parsed/rendered, and survives any future re-render of the tab bar.
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest && e.target.closest('#tab-bar .tab-btn');
+    if (btn && btn.dataset && btn.dataset.tab) {
+      switchTab(btn.dataset.tab);
+    }
   });
 
   // === Refresh ===

@@ -1,12 +1,4 @@
 <!DOCTYPE html>
-<!--
-  Rollback snapshots (oldest first):
-    /index-old.html         localStorage 时代
-    /index-pre-cloud.html   Supabase 化前
-    /index-pre-export.html  Excel/PDF 加入前
-    /index-pre-gantt.html   Tab + 看板加入前
-    /index-pre-gantt2.html  解决进度替换为甘特图前
--->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
@@ -1127,510 +1119,148 @@
   }
   .status-row .cat-select { flex: 1; width: auto; }
 
-  /* === Gantt: toolbar === */
-  .gantt-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-  .gantt-views {
-    display: flex;
-    gap: 4px;
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 3px;
-  }
-  .gantt-view-btn {
-    appearance: none;
-    background: transparent;
-    border: none;
-    padding: 6px 14px;
-    border-radius: 999px;
+  /* === Board / Kanban view === */
+  .board-hint {
     font-family: var(--mono);
     font-size: 12px;
-    font-weight: 500;
     color: var(--ink-muted);
-    cursor: pointer;
-    letter-spacing: 0.02em;
+    margin: 0 0 16px;
+    line-height: 1.5;
   }
-  .gantt-view-btn.active {
-    background: var(--ink);
-    color: #fff;
-    font-weight: 600;
-  }
-  .gantt-add-btn {
-    appearance: none;
-    background: #c8442a;
-    color: #fff;
-    border: none;
-    padding: 9px 18px;
-    border-radius: 999px;
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    box-shadow: 0 2px 8px rgba(200, 68, 42, 0.25);
-    transition: transform 0.12s ease;
-  }
-  .gantt-add-btn:active { transform: scale(0.97); }
-  .gantt-add-btn .plus { font-family: var(--mono); font-style: normal; font-size: 16px; }
+  .board-hint-mobile { display: none; }
 
-  /* === Gantt: desktop chart === */
-  .gantt-chart {
-    display: flex;
-    background: var(--card);
-    border: 1px solid var(--line);
+  .board-columns {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .board-column {
+    background: #f5efe2;
     border-radius: 12px;
-    overflow: hidden;
-    box-shadow: var(--shadow);
+    padding: 16px;
+    min-height: 400px;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
   }
-  .gantt-sidebar {
-    flex: 0 0 240px;
-    border-right: 1px solid var(--line);
-    background: var(--bg-soft);
+  .board-column.drag-over {
+    background: #ebe4d0;
+    box-shadow: inset 0 0 0 2px var(--accent);
   }
-  .gantt-sidebar-header {
-    height: 56px;
+  .board-column-head {
     display: flex;
     align-items: center;
-    padding: 0 16px;
-    border-bottom: 1px solid var(--line);
-    font-family: var(--mono);
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--ink-muted);
-    background: var(--card);
-  }
-  .gantt-sidebar-rows { padding: 0; }
-  .gantt-sidebar-row {
-    height: 48px;
-    margin: 8px 0 0;
-    padding: 6px 14px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    cursor: pointer;
-    transition: background 0.12s ease;
-  }
-  .gantt-sidebar-row:first-child { margin-top: 8px; }
-  .gantt-sidebar-row:hover { background: rgba(0, 0, 0, 0.03); }
-  .gantt-sidebar-row-title {
-    font-family: var(--serif);
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.3;
-    color: var(--ink);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    margin-bottom: 3px;
-  }
-  .gantt-sidebar-row-meta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--ink-muted);
-    overflow: hidden;
-  }
-  .gantt-sidebar-row-meta .owner {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    flex: 1;
-  }
-  .gantt-sidebar-row-meta .badge {
-    flex-shrink: 0;
-    font-size: 9px;
-    font-weight: 600;
-    padding: 2px 6px;
-    border-radius: 999px;
-  }
-
-  .gantt-timeline-scroll {
-    flex: 1;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-  }
-  .gantt-timeline-inner {
-    position: relative;
-    min-width: 100%;
-  }
-  .gantt-ruler {
-    position: relative;
-    height: 56px;
-    background: var(--card);
-    border-bottom: 1px solid var(--line);
-  }
-  .gantt-ruler-months {
-    position: relative;
-    height: 28px;
-    border-bottom: 1px solid var(--line-soft);
-  }
-  .gantt-ruler-month {
-    position: absolute;
-    top: 0;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--mono);
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--ink);
-    border-right: 1px solid var(--line-soft);
-    box-sizing: border-box;
-  }
-  .gantt-ruler-days {
-    position: relative;
-    height: 28px;
-  }
-  .gantt-ruler-day {
-    position: absolute;
-    top: 0;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--ink-muted);
-    box-sizing: border-box;
-  }
-  .gantt-ruler-day.weekend { background: rgba(0, 0, 0, 0.03); }
-  .gantt-ruler-day.today {
-    background: rgba(200, 68, 42, 0.12);
-    color: #c8442a;
-    font-weight: 700;
-  }
-
-  .gantt-bars { position: relative; }
-  .gantt-bar-row {
-    position: relative;
-    height: 48px;
-    margin: 8px 0 0;
-  }
-  .gantt-bar-row:first-child { margin-top: 8px; }
-  .gantt-bar {
-    position: absolute;
-    top: 6px;
-    height: 36px;
-    border-radius: 6px;
-    cursor: pointer;
-    overflow: visible;
-    transition: transform 0.12s ease, box-shadow 0.12s ease;
-  }
-  .gantt-bar:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
-  }
-  .gantt-bar.status-not-started { background: #d4cfc4; }
-  .gantt-bar.status-in-progress { background: #e8a87c; }
-  .gantt-bar.status-completed   { background: #9bc995; }
-  .gantt-bar.status-paused      { background: #d49b8e; }
-  .gantt-bar-fill {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    border-radius: 6px 0 0 6px;
-  }
-  .gantt-bar.status-not-started .gantt-bar-fill { background: #a39d8c; }
-  .gantt-bar.status-in-progress .gantt-bar-fill { background: #c8442a; }
-  .gantt-bar.status-completed   .gantt-bar-fill { background: #6b8e5a; }
-  .gantt-bar.status-paused      .gantt-bar-fill { background: #a04438; }
-  .gantt-bar-fill.full { border-radius: 6px; }
-  .gantt-bar-label {
-    position: relative;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--mono);
-    font-size: 11px;
-    font-weight: 600;
-    color: #fff;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
-    padding: 0 8px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    pointer-events: none;
-  }
-  .gantt-bar-feedback-badge {
-    position: absolute;
-    right: -8px;
-    top: -6px;
-    background: var(--ink);
-    color: var(--bg);
-    font-family: var(--mono);
-    font-size: 9px;
-    font-weight: 700;
-    padding: 2px 5px;
-    border-radius: 999px;
-    z-index: 2;
-  }
-
-  .gantt-today-line {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: #c8442a;
-    opacity: 0.85;
-    z-index: 1;
-    pointer-events: none;
-  }
-  .gantt-today-line::before {
-    content: '今天';
-    position: absolute;
-    top: -22px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #c8442a;
-    color: #fff;
-    font-size: 9px;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-family: var(--mono);
-    font-weight: 600;
-    white-space: nowrap;
-  }
-
-  /* === Gantt: mobile cards === */
-  .gantt-mobile-list { display: none; }
-  .gantt-mobile-card {
-    background: var(--card);
-    border-radius: 12px;
-    padding: 14px;
-    margin-bottom: 10px;
-    border: 1px solid var(--line-soft);
-    box-shadow: var(--shadow);
-    cursor: pointer;
-    transition: transform 0.12s ease;
-  }
-  .gantt-mobile-card:active { transform: scale(0.99); }
-  .gantt-mobile-head {
-    display: flex;
-    align-items: flex-start;
     justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 8px;
+    margin-bottom: 14px;
+    padding: 0 2px;
   }
-  .gantt-mobile-title {
-    flex: 1;
-    font-family: var(--serif);
-    font-size: 16px;
-    font-weight: 700;
-    margin: 0;
-    color: var(--ink);
-    line-height: 1.3;
-    word-break: break-word;
-  }
-  .gantt-mobile-status {
-    flex-shrink: 0;
+  .board-column-title {
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: 14px;
     font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 999px;
     letter-spacing: 0.02em;
-    margin-top: 2px;
   }
-  .gantt-mobile-meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-    flex-wrap: wrap;
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--ink-muted);
-  }
-  .gantt-mobile-meta .dates { letter-spacing: 0.02em; }
-  .gantt-mobile-progress {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .gantt-mobile-progress-track {
-    flex: 1;
-    height: 6px;
-    background: var(--bg-soft);
-    border-radius: 3px;
-    overflow: hidden;
-  }
-  .gantt-mobile-progress-fill {
-    height: 100%;
-    transition: width 0.2s ease;
-  }
-  .gantt-mobile-progress-fill.status-not-started { background: #a39d8c; }
-  .gantt-mobile-progress-fill.status-in-progress { background: #c8442a; }
-  .gantt-mobile-progress-fill.status-completed   { background: #6b8e5a; }
-  .gantt-mobile-progress-fill.status-paused      { background: #a04438; }
-  .gantt-mobile-progress-text {
+  .board-column[data-status="待处理"] .board-column-title { color: #6b5f4d; }
+  .board-column[data-status="处理中"] .board-column-title { color: #8a5a1a; }
+  .board-column[data-status="已解决"] .board-column-title { color: #2e6b30; }
+  .board-column-count {
     font-family: var(--mono);
     font-size: 11px;
     font-weight: 600;
-    color: var(--ink);
-    min-width: 36px;
-    text-align: right;
-  }
-
-  /* === Gantt: status pills (mobile + sidebar) === */
-  .pill-not-started { background: #e8e3d5; color: #6b5f4d; }
-  .pill-in-progress { background: #fce8c4; color: #8a5a1a; }
-  .pill-completed   { background: #c8e6c9; color: #2e6b30; }
-  .pill-paused      { background: #ffcdd2; color: #8b2a2a; }
-
-  /* === Gantt: empty state === */
-  .gantt-empty {
-    text-align: center;
-    padding: 70px 24px;
     color: var(--ink-muted);
+    background: rgba(0,0,0,0.05);
+    padding: 2px 8px;
+    border-radius: 999px;
   }
-  .gantt-empty-icon {
-    font-size: 48px;
-    margin-bottom: 16px;
+  .board-column-empty {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-muted);
+    padding: 30px 10px;
+    border: 1.5px dashed var(--line);
+    border-radius: 8px;
+    background: transparent;
   }
-  .gantt-empty h3 {
-    font-family: var(--serif);
-    font-weight: 500;
-    font-size: 20px;
-    color: var(--ink);
-    margin: 0 0 8px;
+  .board-card {
+    background: var(--card-elev);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    cursor: pointer;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+    position: relative;
   }
-  .gantt-empty p {
-    font-size: 13px;
-    margin: 0;
-    letter-spacing: 0.01em;
+  .board-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
   }
-
-  /* === Project form: date / progress / feedback link === */
-  .date-row {
+  .board-card.dragging {
+    opacity: 0.4;
+    cursor: grabbing;
+  }
+  .board-card-thumb {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+  }
+  .board-card-thumb img,
+  .board-card-thumb video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .board-card-thumb-video {
+    width: 100%;
+    height: 100%;
+    background: #2b2620;
+    color: #f5efe1;
+    font-size: 10px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
   }
-  .date-input {
+  .board-card-body {
     flex: 1;
     min-width: 0;
-    border: 1px solid var(--line);
-    background: var(--card-elev);
-    border-radius: var(--radius-sm);
-    padding: 11px 12px;
-    font-family: var(--mono);
+  }
+  .board-card-title {
+    font-family: var(--serif);
     font-size: 14px;
-    color: var(--ink);
-    outline: none;
-    -webkit-appearance: none;
-  }
-  .date-input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(138, 109, 59, 0.12);
-  }
-  .date-row-sep {
-    font-family: var(--mono);
-    color: var(--ink-muted);
-    flex-shrink: 0;
-  }
-  .date-error {
-    color: var(--danger);
-    font-family: var(--mono);
-    font-size: 11px;
-    margin-top: 6px;
-    letter-spacing: 0.02em;
-  }
-  .progress-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .progress-row input[type="range"] {
-    flex: 1;
-    -webkit-appearance: none;
-    appearance: none;
-    height: 6px;
-    background: var(--bg-soft);
-    border-radius: 3px;
-    outline: none;
-    border: 1px solid var(--line);
-  }
-  .progress-row input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--accent);
-    cursor: pointer;
-    border: 2px solid #fff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
-  }
-  .progress-row input[type="range"]::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--accent);
-    cursor: pointer;
-    border: 2px solid #fff;
-  }
-  .progress-value {
-    font-family: var(--mono);
-    font-size: 13px;
     font-weight: 600;
-    min-width: 44px;
-    text-align: right;
     color: var(--ink);
-  }
-  .feedback-link-list {
-    max-height: 220px;
-    overflow-y: auto;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    background: var(--card-elev);
-  }
-  .feedback-link-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--line-soft);
-    cursor: pointer;
-    font-family: var(--mono);
-    font-size: 12px;
-  }
-  .feedback-link-item:last-child { border-bottom: none; }
-  .feedback-link-item input[type="checkbox"] { flex-shrink: 0; cursor: pointer; }
-  .feedback-link-item-title {
-    flex: 1;
+    line-height: 1.3;
+    margin: 0 0 6px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--ink);
+    letter-spacing: -0.005em;
   }
-  .feedback-link-empty {
-    text-align: center;
-    padding: 22px 12px;
+  .board-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .board-card-meta .cat-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    margin-top: 0;
+  }
+  .board-card-time {
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 10px;
     color: var(--ink-muted);
-    font-style: italic;
+    letter-spacing: 0.02em;
+    margin-left: auto;
   }
-
-  /* On mobile: stack project delete + cancel + submit in footer */
-  .form-modal-foot .sheet-btn.danger { flex: 0 1 auto; }
 
   /* === PDF status badge === */
   .pdf-status {
@@ -1691,13 +1321,18 @@
     .sheet-mask { background: rgba(0, 0, 0, 0.5); }
   }
 
-  /* === Mobile gantt layout: hide chart, show vertical list === */
+  /* === Mobile board layout === */
   @media (max-width: 767px) {
-    .gantt-chart { display: none !important; }
-    .gantt-mobile-list { display: block; }
-    .gantt-toolbar { flex-wrap: wrap; gap: 10px; }
-    .gantt-views { order: 2; }
-    .gantt-add-btn { order: 1; margin-left: auto; }
+    .board-columns {
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    .board-column {
+      min-height: auto;
+      padding: 14px;
+    }
+    .board-hint-desktop { display: none; }
+    .board-hint-mobile { display: inline; }
   }
 
   /* small screens */
@@ -1753,36 +1388,32 @@
   </div>
 
   <div id="page-progress" class="page" hidden>
-    <div class="gantt-toolbar">
-      <div class="gantt-views" id="gantt-views">
-        <button class="gantt-view-btn" data-view="week">周</button>
-        <button class="gantt-view-btn active" data-view="month">月</button>
-        <button class="gantt-view-btn" data-view="quarter">季度</button>
+    <p class="board-hint">
+      <span class="board-hint-desktop">看板视图 · 拖拽卡片到不同列即可更新状态</span>
+      <span class="board-hint-mobile">看板视图 · 点击卡片可编辑状态</span>
+    </p>
+    <div class="board-columns" id="board-columns">
+      <div class="board-column" data-status="待处理">
+        <header class="board-column-head">
+          <span class="board-column-title">待处理</span>
+          <span class="board-column-count" data-count-for="待处理">0</span>
+        </header>
+        <div class="board-column-list" data-list-for="待处理"></div>
       </div>
-      <button class="gantt-add-btn" id="btn-add-project">
-        <span class="plus">+</span> 新增项目
-      </button>
-    </div>
-
-    <div class="gantt-chart" id="gantt-chart" hidden>
-      <div class="gantt-sidebar">
-        <div class="gantt-sidebar-header">项目</div>
-        <div class="gantt-sidebar-rows" id="gantt-sidebar-rows"></div>
+      <div class="board-column" data-status="处理中">
+        <header class="board-column-head">
+          <span class="board-column-title">处理中</span>
+          <span class="board-column-count" data-count-for="处理中">0</span>
+        </header>
+        <div class="board-column-list" data-list-for="处理中"></div>
       </div>
-      <div class="gantt-timeline-scroll" id="gantt-timeline-scroll">
-        <div class="gantt-timeline-inner" id="gantt-timeline-inner">
-          <div class="gantt-ruler" id="gantt-ruler"></div>
-          <div class="gantt-bars" id="gantt-bars"></div>
-        </div>
+      <div class="board-column" data-status="已解决">
+        <header class="board-column-head">
+          <span class="board-column-title">已解决</span>
+          <span class="board-column-count" data-count-for="已解决">0</span>
+        </header>
+        <div class="board-column-list" data-list-for="已解决"></div>
       </div>
-    </div>
-
-    <div class="gantt-mobile-list" id="gantt-mobile-list" hidden></div>
-
-    <div class="gantt-empty" id="gantt-empty" hidden>
-      <div class="gantt-empty-icon">📋</div>
-      <h3>还没有项目</h3>
-      <p>点右上角「+ 新增项目」开始</p>
     </div>
   </div>
 </main>
@@ -1834,58 +1465,6 @@
   <footer class="form-modal-foot">
     <button class="sheet-btn" id="form-cancel">取消</button>
     <button class="sheet-btn primary" id="form-submit">提交反馈</button>
-  </footer>
-</div>
-
-<!-- Project (gantt) form modal -->
-<div class="form-mask" id="project-form-mask"></div>
-<div class="form-modal" id="project-form-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="project-form-title">
-  <header class="form-modal-head">
-    <h2 class="form-modal-title" id="project-form-title">新增项目</h2>
-    <button class="form-close" id="project-form-close" aria-label="关闭">×</button>
-  </header>
-  <div class="form-modal-body">
-    <section class="section">
-      <div class="section-label">项目名 <span class="required">必填</span></div>
-      <input type="text" id="project-name" class="title-input" placeholder="简要描述这个项目…" maxlength="100" />
-    </section>
-    <section class="section">
-      <div class="section-label">负责人</div>
-      <input type="text" id="project-owner" class="title-input" placeholder="可选，谁来推进" maxlength="40" />
-    </section>
-    <section class="section">
-      <div class="section-label">起止日期 <span class="required">必填</span></div>
-      <div class="date-row">
-        <input type="date" id="project-start" class="date-input" />
-        <span class="date-row-sep">→</span>
-        <input type="date" id="project-end" class="date-input" />
-      </div>
-      <div class="date-error" id="project-date-error" hidden>结束日期不能早于开始日期</div>
-    </section>
-    <section class="section">
-      <div class="section-label">状态</div>
-      <select id="project-status" class="cat-select" aria-label="状态"></select>
-    </section>
-    <section class="section">
-      <div class="section-label">进度</div>
-      <div class="progress-row">
-        <input type="range" id="project-progress" min="0" max="100" step="5" value="0" />
-        <span class="progress-value" id="project-progress-value">0%</span>
-      </div>
-    </section>
-    <section class="section">
-      <div class="section-label">关联反馈</div>
-      <div class="feedback-link-list" id="project-feedback-list"></div>
-    </section>
-    <section class="section">
-      <div class="section-label">备注</div>
-      <textarea id="project-notes" placeholder="可选，补充说明…"></textarea>
-    </section>
-  </div>
-  <footer class="form-modal-foot">
-    <button class="sheet-btn danger" id="project-delete-btn" hidden>删除</button>
-    <button class="sheet-btn" id="project-form-cancel">取消</button>
-    <button class="sheet-btn primary" id="project-form-submit">保存</button>
   </footer>
 </div>
 
@@ -1953,26 +1532,14 @@
 
   const STATUS_LIST = ['待处理', '处理中', '已解决', '已关闭'];
   const DEFAULT_STATUS = '待处理';
+  // Statuses shown as columns on the progress board (excludes "已关闭").
+  const BOARD_STATUSES = ['待处理', '处理中', '已解决'];
   const STATUS_CLASS = {
     '待处理': 'pending',
     '处理中': 'progressing',
     '已解决': 'resolved',
     '已关闭': 'closed'
   };
-
-  // === Projects (gantt) ===
-  const PROJECTS_TABLE = 'projects';
-  const PROJECT_STATUS_LIST = ['未开始', '进行中', '已完成', '已暂停'];
-  const DEFAULT_PROJECT_STATUS = '未开始';
-  const PROJECT_STATUS_CLASS = {
-    '未开始': 'not-started',
-    '进行中': 'in-progress',
-    '已完成': 'completed',
-    '已暂停': 'paused'
-  };
-  const GANTT_DAY_WIDTH = { week: 40, month: 24, quarter: 12 };
-  const GANTT_HALF_RANGE = { week: 7, month: 15, quarter: 30 }; // ±days around today
-  const DAY_MS = 24 * 60 * 60 * 1000;
   const CATEGORY_COLOR = {
     'bug': 'red', '闪退': 'red',
     '优化建议': 'green', '功能设置': 'green',
@@ -1985,12 +1552,10 @@
   let activeStatus = 'all';
   let editingId = null;
   let state = [];
-  let projects = [];
-  let projectEditingId = null;
-  let ganttView = 'month'; // 'week' | 'month' | 'quarter'
   let isLoadingRemote = false;
   let currentTab = 'board';
   const tabScrollPos = { board: 0, progress: 0 };
+  const _movingIds = new Set(); // cards with in-flight status updates
 
   function uid() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
@@ -2080,119 +1645,6 @@
       .update({ status, updated_at: new Date().toISOString() })
       .eq('id', id);
     if (error) throw error;
-  }
-
-  // === Projects (gantt) data layer ===
-  function toProjectRow(p) {
-    const row = {
-      title: (p.title || '').trim(),
-      owner: p.owner ? p.owner.trim() : null,
-      start_date: p.startDate,
-      end_date: p.endDate,
-      progress: typeof p.progress === 'number' ? Math.max(0, Math.min(100, Math.round(p.progress))) : 0,
-      status: PROJECT_STATUS_LIST.includes(p.status) ? p.status : DEFAULT_PROJECT_STATUS,
-      notes: p.notes ? p.notes : null,
-      related_feedback_ids: Array.isArray(p.relatedFeedbackIds) ? p.relatedFeedbackIds : [],
-      updated_at: new Date().toISOString()
-    };
-    if (p.id) row.id = p.id;
-    return row;
-  }
-  function fromProjectRow(row) {
-    return {
-      id: row.id,
-      title: row.title || '',
-      owner: row.owner || '',
-      startDate: row.start_date || '',
-      endDate: row.end_date || '',
-      progress: typeof row.progress === 'number' ? row.progress : 0,
-      status: PROJECT_STATUS_LIST.includes(row.status) ? row.status : DEFAULT_PROJECT_STATUS,
-      notes: row.notes || '',
-      relatedFeedbackIds: Array.isArray(row.related_feedback_ids) ? row.related_feedback_ids : [],
-      createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
-      updatedAt: row.updated_at ? new Date(row.updated_at).getTime() : Date.now()
-    };
-  }
-
-  async function cloudListProjects() {
-    _assertCloud();
-    const { data, error } = await supabase
-      .from(PROJECTS_TABLE)
-      .select('*')
-      .order('start_date', { ascending: true });
-    if (error) throw error;
-    return (data || []).map(fromProjectRow);
-  }
-  async function cloudInsertProject(p) {
-    _assertCloud();
-    const row = toProjectRow(p);
-    delete row.id; // let DB generate UUID
-    const { data, error } = await supabase
-      .from(PROJECTS_TABLE)
-      .insert(row)
-      .select()
-      .single();
-    if (error) throw error;
-    return fromProjectRow(data);
-  }
-  async function cloudUpdateProject(id, patch) {
-    _assertCloud();
-    const row = {};
-    if ('title' in patch) row.title = (patch.title || '').trim();
-    if ('owner' in patch) row.owner = patch.owner ? patch.owner.trim() : null;
-    if ('startDate' in patch) row.start_date = patch.startDate;
-    if ('endDate' in patch) row.end_date = patch.endDate;
-    if ('progress' in patch) row.progress = Math.max(0, Math.min(100, Math.round(patch.progress)));
-    if ('status' in patch) row.status = PROJECT_STATUS_LIST.includes(patch.status) ? patch.status : DEFAULT_PROJECT_STATUS;
-    if ('notes' in patch) row.notes = patch.notes ? patch.notes : null;
-    if ('relatedFeedbackIds' in patch) row.related_feedback_ids = Array.isArray(patch.relatedFeedbackIds) ? patch.relatedFeedbackIds : [];
-    row.updated_at = new Date().toISOString();
-    const { data, error } = await supabase
-      .from(PROJECTS_TABLE)
-      .update(row)
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return fromProjectRow(data);
-  }
-  async function cloudDeleteProject(id) {
-    _assertCloud();
-    const { error } = await supabase.from(PROJECTS_TABLE).delete().eq('id', id);
-    if (error) throw error;
-  }
-
-  async function loadProjects() {
-    if (!supabase) return;
-    try {
-      projects = await cloudListProjects();
-    } catch (e) {
-      toast('加载项目失败：' + (e?.message || e));
-      console.warn('cloudListProjects failed', e);
-    }
-  }
-
-  // === Date helpers for gantt ===
-  function parseDate(s) {
-    if (!s || typeof s !== 'string') return null;
-    const [y, m, d] = s.split('-').map(Number);
-    if (!y || !m || !d) return null;
-    return new Date(y, m - 1, d);
-  }
-  function formatDateISO(d) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  }
-  function daysBetween(a, b) {
-    // Calendar days from a to b (both at local midnight).
-    const ma = new Date(a.getFullYear(), a.getMonth(), a.getDate()).getTime();
-    const mb = new Date(b.getFullYear(), b.getMonth(), b.getDate()).getTime();
-    return Math.round((mb - ma) / DAY_MS);
-  }
-  function isValidProject(p) {
-    return !!(p && p.title && parseDate(p.startDate) && parseDate(p.endDate));
   }
 
   // === Storage wrappers ===
@@ -2463,7 +1915,7 @@
     if (currentTab === 'board') {
       renderBoardPage();
     } else {
-      renderGantt();
+      renderProgressBoard();
     }
   }
 
@@ -2498,7 +1950,49 @@
     bindCardEvents();
   }
 
-  // (Old "解决进度" three-column kanban removed in favor of the gantt — see renderGantt below.)
+  function renderProgressBoard() {
+    BOARD_STATUSES.forEach(status => {
+      const colItems = state.filter(it => getStatusOf(it) === status)
+        .sort((a, b) => b.createdAt - a.createdAt);
+      const listEl = document.querySelector(`.board-column-list[data-list-for="${status}"]`);
+      const countEl = document.querySelector(`.board-column-count[data-count-for="${status}"]`);
+      countEl.textContent = colItems.length;
+      if (colItems.length === 0) {
+        listEl.innerHTML = `<div class="board-column-empty">暂无</div>`;
+      } else {
+        listEl.innerHTML = colItems.map(it => renderBoardCard(it)).join('');
+      }
+    });
+    bindBoardEvents();
+  }
+
+  function renderBoardCard(item) {
+    const title = (item.title || '').trim() || '未命名反馈';
+    const category = getCategoryOf(item);
+    const colorClass = CATEGORY_COLOR[category] || 'neutral';
+    const time = formatRelativeTime(item.createdAt);
+    const firstMedia = (item.media || [])[0];
+    let thumb = '';
+    if (firstMedia) {
+      if (mediaIsVideo(firstMedia)) {
+        thumb = `<div class="board-card-thumb"><div class="board-card-thumb-video">▶</div></div>`;
+      } else {
+        thumb = `<div class="board-card-thumb"><img src="${escapeAttr(mediaSrc(firstMedia))}" loading="lazy" alt="" /></div>`;
+      }
+    }
+    return `
+      <div class="board-card" data-id="${escapeAttr(item.id)}">
+        ${thumb}
+        <div class="board-card-body">
+          <h4 class="board-card-title">${escapeAttr(title)}</h4>
+          <div class="board-card-meta">
+            <span class="cat-tag ${colorClass}">${escapeAttr(category)}</span>
+            <span class="board-card-time">${escapeAttr(time)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
   function renderCard(item, i) {
     const hasProblem = item.problem && item.problem.trim();
@@ -2613,221 +2107,93 @@
     });
   }
 
-  // === Gantt (解决进度) rendering ===
-  const ganttChartEl = document.getElementById('gantt-chart');
-  const ganttMobileEl = document.getElementById('gantt-mobile-list');
-  const ganttEmptyEl = document.getElementById('gantt-empty');
-  const ganttSidebarRowsEl = document.getElementById('gantt-sidebar-rows');
-  const ganttRulerEl = document.getElementById('gantt-ruler');
-  const ganttBarsEl = document.getElementById('gantt-bars');
-  const ganttTimelineInnerEl = document.getElementById('gantt-timeline-inner');
+  // === Board (kanban) interactions ===
+  const _isCoarsePointer = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
 
-  function renderGantt() {
-    const validProjects = projects.filter(isValidProject);
-    if (validProjects.length === 0) {
-      ganttChartEl.hidden = true;
-      ganttMobileEl.hidden = true;
-      ganttEmptyEl.hidden = false;
+  function bindBoardEvents() {
+    // Click-to-edit on every card (both desktop & mobile).
+    document.querySelectorAll('#page-progress .board-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        // Suppress click if we were dragging (browser handles this natively too,
+        // but cover the edge case where dragend fires before click).
+        if (card.classList.contains('dragging')) return;
+        const id = card.dataset.id;
+        const item = state.find(it => it.id === id);
+        if (item) openForm(item);
+      });
+
+      // Desktop drag-source. Disabled on coarse-pointer (touch) devices
+      // because HTML5 drag is unreliable there; tap-to-edit is the fallback.
+      if (!_isCoarsePointer) {
+        card.draggable = true;
+        card.addEventListener('dragstart', (e) => {
+          const id = card.dataset.id;
+          if (_movingIds.has(id)) {
+            e.preventDefault();
+            toast('该卡片正在更新中');
+            return;
+          }
+          e.dataTransfer.setData('text/plain', id);
+          e.dataTransfer.effectAllowed = 'move';
+          card.classList.add('dragging');
+        });
+        card.addEventListener('dragend', () => {
+          card.classList.remove('dragging');
+          document.querySelectorAll('.board-column').forEach(c => c.classList.remove('drag-over'));
+        });
+      }
+    });
+
+    // Drop targets.
+    document.querySelectorAll('#page-progress .board-column').forEach(colEl => {
+      const targetStatus = colEl.dataset.status;
+      colEl.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        colEl.classList.add('drag-over');
+      });
+      colEl.addEventListener('dragleave', (e) => {
+        // Only clear when leaving the column itself, not a child.
+        if (!colEl.contains(e.relatedTarget)) colEl.classList.remove('drag-over');
+      });
+      colEl.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        colEl.classList.remove('drag-over');
+        const id = e.dataTransfer.getData('text/plain');
+        if (!id) return;
+        await moveCardToStatus(id, targetStatus);
+      });
+    });
+  }
+
+  // Updates a card's status optimistically. Locks the card to prevent concurrent
+  // updates on the same id; different cards stay independent.
+  async function moveCardToStatus(id, targetStatus) {
+    if (!STATUS_LIST.includes(targetStatus)) return;
+    const item = state.find(it => it.id === id);
+    if (!item) return;
+    const oldStatus = getStatusOf(item);
+    if (oldStatus === targetStatus) return;
+    if (_movingIds.has(id)) {
+      toast('该卡片正在更新中');
       return;
     }
-    ganttEmptyEl.hidden = true;
-    const isDesktop = window.innerWidth >= 768;
-    if (isDesktop) {
-      ganttChartEl.hidden = false;
-      ganttMobileEl.hidden = true;
-      renderGanttDesktop(validProjects);
-    } else {
-      ganttChartEl.hidden = true;
-      ganttMobileEl.hidden = false;
-      renderGanttMobile(validProjects);
+    _movingIds.add(id);
+    // Optimistic local update.
+    item.status = targetStatus;
+    renderProgressBoard();
+    try {
+      await cloudUpdateStatus(id, targetStatus);
+      toast(`已移动到「${targetStatus}」`);
+    } catch (err) {
+      // Rollback on failure.
+      item.status = oldStatus;
+      renderProgressBoard();
+      toast('移动失败：' + (err?.message || err));
+    } finally {
+      _movingIds.delete(id);
     }
   }
-
-  function computeGanttRange(items) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const half = GANTT_HALF_RANGE[ganttView] || 15;
-    let start = new Date(today.getTime() - half * DAY_MS);
-    let end = new Date(today.getTime() + half * DAY_MS);
-    items.forEach(p => {
-      const s = parseDate(p.startDate);
-      const e = parseDate(p.endDate);
-      if (s && s < start) start = new Date(s);
-      if (e && e > end) end = new Date(e);
-    });
-    // Pad a few days on each side for visual breathing room.
-    start.setDate(start.getDate() - 2);
-    end.setDate(end.getDate() + 2);
-    return { start, end, today };
-  }
-
-  function renderGanttDesktop(items) {
-    const dayWidth = GANTT_DAY_WIDTH[ganttView] || 24;
-    const { start, end, today } = computeGanttRange(items);
-    const totalDays = daysBetween(start, end) + 1;
-    const totalWidth = totalDays * dayWidth;
-    ganttTimelineInnerEl.style.width = totalWidth + 'px';
-
-    // Ruler
-    let monthsHtml = '';
-    let curMonth = -1, curYear = -1, segStart = 0;
-    const flushMonth = (endIdx) => {
-      const d = new Date(start);
-      d.setDate(start.getDate() + segStart);
-      const left = segStart * dayWidth;
-      const width = (endIdx - segStart) * dayWidth;
-      monthsHtml += `<div class="gantt-ruler-month" style="left:${left}px; width:${width}px">${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}</div>`;
-    };
-    for (let i = 0; i < totalDays; i++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      const m = d.getMonth();
-      const y = d.getFullYear();
-      if (m !== curMonth || y !== curYear) {
-        if (curMonth !== -1) flushMonth(i);
-        curMonth = m;
-        curYear = y;
-        segStart = i;
-      }
-    }
-    flushMonth(totalDays);
-
-    let daysHtml = '';
-    for (let i = 0; i < totalDays; i++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-      const isToday = d.toDateString() === today.toDateString();
-      const cls = ['gantt-ruler-day'];
-      if (isWeekend) cls.push('weekend');
-      if (isToday) cls.push('today');
-      const label = dayWidth >= 24 ? d.getDate() : (dayWidth >= 16 ? d.getDate() : (isToday || d.getDate() === 1 ? d.getDate() : ''));
-      daysHtml += `<div class="${cls.join(' ')}" style="left:${i * dayWidth}px; width:${dayWidth}px">${label}</div>`;
-    }
-    ganttRulerEl.innerHTML = `<div class="gantt-ruler-months">${monthsHtml}</div><div class="gantt-ruler-days">${daysHtml}</div>`;
-
-    // Bars (one row per project)
-    const todayOffset = daysBetween(start, today) * dayWidth + dayWidth / 2;
-    let barsHtml = '';
-    items.forEach(p => {
-      barsHtml += `<div class="gantt-bar-row" data-project-id="${escapeAttr(p.id)}">${renderGanttBar(p, start, dayWidth)}</div>`;
-    });
-    // Today line spans the whole bars area.
-    const totalHeight = items.length * 56 + 8;
-    barsHtml += `<div class="gantt-today-line" style="left:${todayOffset}px; height:${totalHeight}px"></div>`;
-    ganttBarsEl.innerHTML = barsHtml;
-    ganttBarsEl.style.height = totalHeight + 'px';
-
-    // Sidebar
-    ganttSidebarRowsEl.innerHTML = items.map(p => renderGanttSidebarRow(p)).join('');
-
-    // Wire clicks on bars + sidebar rows.
-    ganttBarsEl.querySelectorAll('.gantt-bar').forEach(el => {
-      el.addEventListener('click', () => {
-        const id = el.dataset.projectId;
-        const p = projects.find(x => x.id === id);
-        if (p) openProjectForm(p);
-      });
-    });
-    ganttSidebarRowsEl.querySelectorAll('.gantt-sidebar-row').forEach(el => {
-      el.addEventListener('click', () => {
-        const id = el.dataset.projectId;
-        const p = projects.find(x => x.id === id);
-        if (p) openProjectForm(p);
-      });
-    });
-  }
-
-  function renderGanttBar(p, rangeStart, dayWidth) {
-    const s = parseDate(p.startDate);
-    const e = parseDate(p.endDate);
-    const offsetDays = daysBetween(rangeStart, s);
-    const lenDays = daysBetween(s, e) + 1;
-    const left = offsetDays * dayWidth;
-    const width = Math.max(lenDays * dayWidth, 24);
-    const statusCls = 'status-' + (PROJECT_STATUS_CLASS[p.status] || 'not-started');
-    const pct = Math.max(0, Math.min(100, p.progress || 0));
-    const fillWidth = width * pct / 100;
-    const fillCls = pct >= 100 ? 'gantt-bar-fill full' : 'gantt-bar-fill';
-    const relCount = Array.isArray(p.relatedFeedbackIds) ? p.relatedFeedbackIds.length : 0;
-    const badge = relCount > 0 ? `<span class="gantt-bar-feedback-badge">${relCount}</span>` : '';
-    return `
-      <div class="gantt-bar ${statusCls}" data-project-id="${escapeAttr(p.id)}" style="left:${left}px; width:${width}px">
-        <div class="${fillCls}" style="width:${fillWidth}px"></div>
-        <div class="gantt-bar-label">${escapeAttr(p.title)} · ${pct}%</div>
-        ${badge}
-      </div>
-    `;
-  }
-
-  function renderGanttSidebarRow(p) {
-    const statusCls = 'pill-' + (PROJECT_STATUS_CLASS[p.status] || 'not-started');
-    return `
-      <div class="gantt-sidebar-row" data-project-id="${escapeAttr(p.id)}">
-        <div class="gantt-sidebar-row-title">${escapeAttr(p.title)}</div>
-        <div class="gantt-sidebar-row-meta">
-          <span class="owner">${escapeAttr(p.owner || '—')}</span>
-          <span class="badge ${statusCls}">${escapeAttr(p.status)}</span>
-        </div>
-      </div>
-    `;
-  }
-
-  function renderGanttMobile(items) {
-    ganttMobileEl.innerHTML = items.map(p => {
-      const statusCls = PROJECT_STATUS_CLASS[p.status] || 'not-started';
-      const pct = Math.max(0, Math.min(100, p.progress || 0));
-      const sd = (p.startDate || '').replaceAll('-', '/');
-      const ed = (p.endDate || '').replaceAll('-', '/');
-      return `
-        <div class="gantt-mobile-card" data-project-id="${escapeAttr(p.id)}">
-          <div class="gantt-mobile-head">
-            <h4 class="gantt-mobile-title">${escapeAttr(p.title)}</h4>
-            <span class="gantt-mobile-status pill-${statusCls}">${escapeAttr(p.status)}</span>
-          </div>
-          <div class="gantt-mobile-meta">
-            <span class="owner">${escapeAttr(p.owner || '—')}</span>
-            <span class="dates">${escapeAttr(sd)} → ${escapeAttr(ed)}</span>
-          </div>
-          <div class="gantt-mobile-progress">
-            <div class="gantt-mobile-progress-track">
-              <div class="gantt-mobile-progress-fill status-${statusCls}" style="width:${pct}%"></div>
-            </div>
-            <span class="gantt-mobile-progress-text">${pct}%</span>
-          </div>
-        </div>
-      `;
-    }).join('');
-    ganttMobileEl.querySelectorAll('.gantt-mobile-card').forEach(el => {
-      el.addEventListener('click', () => {
-        const id = el.dataset.projectId;
-        const p = projects.find(x => x.id === id);
-        if (p) openProjectForm(p);
-      });
-    });
-  }
-
-  // Gantt view (week / month / quarter) toolbar.
-  document.querySelectorAll('#gantt-views .gantt-view-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const v = btn.dataset.view;
-      if (!GANTT_DAY_WIDTH[v] || v === ganttView) return;
-      ganttView = v;
-      document.querySelectorAll('#gantt-views .gantt-view-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.view === ganttView);
-      });
-      // View change: re-render the bars/ruler from cached projects (no refetch).
-      renderGantt();
-    });
-  });
-
-  // Re-render gantt on viewport size change (desktop ↔ mobile threshold).
-  let _ganttResizeTimer = null;
-  window.addEventListener('resize', () => {
-    if (currentTab !== 'progress') return;
-    clearTimeout(_ganttResizeTimer);
-    _ganttResizeTimer = setTimeout(() => renderGantt(), 150);
-  });
 
   function readAsDataURL(file) {
     return new Promise((resolve, reject) => {
@@ -3299,249 +2665,6 @@
   formSubmitBtn.addEventListener('click', submitForm);
   // Intentionally do NOT close on mask click — avoid accidental input loss.
 
-  // === Project form modal (gantt) ===
-  const projectFormMask = document.getElementById('project-form-mask');
-  const projectFormModal = document.getElementById('project-form-modal');
-  const projectFormTitleEl = document.getElementById('project-form-title');
-  const projectFormSubmitBtn = document.getElementById('project-form-submit');
-  const projectDeleteBtn = document.getElementById('project-delete-btn');
-  const projectNameEl = document.getElementById('project-name');
-  const projectOwnerEl = document.getElementById('project-owner');
-  const projectStartEl = document.getElementById('project-start');
-  const projectEndEl = document.getElementById('project-end');
-  const projectStatusEl = document.getElementById('project-status');
-  const projectProgressEl = document.getElementById('project-progress');
-  const projectProgressValueEl = document.getElementById('project-progress-value');
-  const projectFeedbackListEl = document.getElementById('project-feedback-list');
-  const projectNotesEl = document.getElementById('project-notes');
-  const projectDateErrorEl = document.getElementById('project-date-error');
-
-  // Populate status select once.
-  projectStatusEl.innerHTML = PROJECT_STATUS_LIST.map(s =>
-    `<option value="${escapeAttr(s)}"${s === DEFAULT_PROJECT_STATUS ? ' selected' : ''}>${escapeAttr(s)}</option>`
-  ).join('');
-
-  let projectFormOriginal = null;
-
-  function snapshotProjectForm() {
-    return {
-      title: projectNameEl.value,
-      owner: projectOwnerEl.value,
-      startDate: projectStartEl.value,
-      endDate: projectEndEl.value,
-      status: projectStatusEl.value,
-      progress: parseInt(projectProgressEl.value, 10) || 0,
-      notes: projectNotesEl.value,
-      relatedFeedbackIds: getSelectedFeedbackIds().slice().sort().join(',')
-    };
-  }
-
-  function projectFormIsDirty() {
-    if (!projectFormOriginal) return false;
-    const curr = snapshotProjectForm();
-    return curr.title !== projectFormOriginal.title
-      || curr.owner !== projectFormOriginal.owner
-      || curr.startDate !== projectFormOriginal.startDate
-      || curr.endDate !== projectFormOriginal.endDate
-      || curr.status !== projectFormOriginal.status
-      || curr.progress !== projectFormOriginal.progress
-      || curr.notes !== projectFormOriginal.notes
-      || curr.relatedFeedbackIds !== projectFormOriginal.relatedFeedbackIds;
-  }
-
-  function getSelectedFeedbackIds() {
-    return Array.from(projectFeedbackListEl.querySelectorAll('input[type="checkbox"]:checked'))
-      .map(cb => cb.value);
-  }
-
-  function renderProjectFeedbackList(selectedIds) {
-    const sel = new Set(selectedIds || []);
-    if (state.length === 0) {
-      projectFeedbackListEl.innerHTML = `<div class="feedback-link-empty">暂无反馈可关联，先去「问题看板」添加</div>`;
-      return;
-    }
-    projectFeedbackListEl.innerHTML = state.map(it => {
-      const title = (it.title || '').trim() || '未命名反馈';
-      const cat = getCategoryOf(it);
-      const colorClass = CATEGORY_COLOR[cat] || 'neutral';
-      const checked = sel.has(it.id) ? ' checked' : '';
-      return `
-        <label class="feedback-link-item">
-          <input type="checkbox" value="${escapeAttr(it.id)}"${checked} />
-          <span class="feedback-link-item-title">${escapeAttr(title)}</span>
-          <span class="cat-tag ${colorClass}">${escapeAttr(cat)}</span>
-        </label>
-      `;
-    }).join('');
-  }
-
-  function validateProjectDates() {
-    const s = projectStartEl.value;
-    const e = projectEndEl.value;
-    if (s && e && s > e) {
-      projectDateErrorEl.hidden = false;
-      projectFormSubmitBtn.disabled = true;
-      return false;
-    }
-    projectDateErrorEl.hidden = true;
-    projectFormSubmitBtn.disabled = false;
-    return true;
-  }
-
-  function openProjectForm(project) {
-    if (project) {
-      projectEditingId = project.id;
-      projectFormTitleEl.textContent = '编辑项目';
-      projectFormSubmitBtn.textContent = '保存';
-      projectDeleteBtn.hidden = false;
-      projectNameEl.value = project.title || '';
-      projectOwnerEl.value = project.owner || '';
-      projectStartEl.value = project.startDate || '';
-      projectEndEl.value = project.endDate || '';
-      projectStatusEl.value = PROJECT_STATUS_LIST.includes(project.status) ? project.status : DEFAULT_PROJECT_STATUS;
-      projectProgressEl.value = String(project.progress || 0);
-      projectProgressValueEl.textContent = (project.progress || 0) + '%';
-      projectNotesEl.value = project.notes || '';
-      renderProjectFeedbackList(project.relatedFeedbackIds || []);
-    } else {
-      projectEditingId = null;
-      projectFormTitleEl.textContent = '新增项目';
-      projectFormSubmitBtn.textContent = '保存';
-      projectDeleteBtn.hidden = true;
-      // Default dates: today → today + 7
-      const today = new Date();
-      const future = new Date(today.getTime() + 7 * DAY_MS);
-      projectNameEl.value = '';
-      projectOwnerEl.value = '';
-      projectStartEl.value = formatDateISO(today);
-      projectEndEl.value = formatDateISO(future);
-      projectStatusEl.value = DEFAULT_PROJECT_STATUS;
-      projectProgressEl.value = '0';
-      projectProgressValueEl.textContent = '0%';
-      projectNotesEl.value = '';
-      renderProjectFeedbackList([]);
-    }
-    validateProjectDates();
-    projectFormOriginal = snapshotProjectForm();
-    projectFormMask.classList.add('open');
-    projectFormModal.classList.add('open');
-    projectFormModal.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeProjectForm() {
-    projectFormMask.classList.remove('open');
-    projectFormModal.classList.remove('open');
-    projectFormModal.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
-    projectEditingId = null;
-    projectFormOriginal = null;
-  }
-
-  function attemptCloseProjectForm() {
-    if (projectFormIsDirty()) {
-      const msg = projectEditingId ? '放弃本次修改？' : '放弃这个项目？';
-      confirmSheet(msg, '已填写或改动的内容将不会保存。', closeProjectForm);
-    } else {
-      closeProjectForm();
-    }
-  }
-
-  async function submitProjectForm() {
-    if (!validateProjectDates()) {
-      toast('结束日期不能早于开始日期');
-      return;
-    }
-    const title = projectNameEl.value.trim();
-    if (!title) {
-      toast('请填写项目名');
-      projectNameEl.focus();
-      return;
-    }
-    const startDate = projectStartEl.value;
-    const endDate = projectEndEl.value;
-    if (!startDate || !endDate) {
-      toast('请填写起止日期');
-      return;
-    }
-    const status = PROJECT_STATUS_LIST.includes(projectStatusEl.value) ? projectStatusEl.value : DEFAULT_PROJECT_STATUS;
-    const progress = parseInt(projectProgressEl.value, 10) || 0;
-    const owner = projectOwnerEl.value.trim();
-    const notes = projectNotesEl.value.trim();
-    const relatedFeedbackIds = getSelectedFeedbackIds();
-    const payload = { title, owner, startDate, endDate, status, progress, notes, relatedFeedbackIds };
-
-    projectFormSubmitBtn.disabled = true;
-    projectFormSubmitBtn.textContent = '保存中…';
-    try {
-      if (projectEditingId) {
-        const updated = await cloudUpdateProject(projectEditingId, payload);
-        const idx = projects.findIndex(p => p.id === projectEditingId);
-        if (idx >= 0) projects[idx] = updated;
-        else projects.push(updated);
-      } else {
-        const created = await cloudInsertProject(payload);
-        projects.push(created);
-      }
-      // Keep sorted by start_date asc to match initial fetch order.
-      projects.sort((a, b) => (a.startDate || '').localeCompare(b.startDate || ''));
-      renderGantt();
-      closeProjectForm();
-      toast(projectEditingId ? '已保存修改' : '已添加项目');
-    } catch (e) {
-      toast('保存失败：' + (e?.message || e));
-    } finally {
-      projectFormSubmitBtn.disabled = false;
-      projectFormSubmitBtn.textContent = '保存';
-    }
-  }
-
-  function deleteProjectFromForm() {
-    if (!projectEditingId) return;
-    const id = projectEditingId;
-    confirmSheet('删除这个项目？', '将从云端永久删除，所有人都将看到删除结果。', async () => {
-      projectDeleteBtn.disabled = true;
-      try {
-        await cloudDeleteProject(id);
-        projects = projects.filter(p => p.id !== id);
-        renderGantt();
-        closeProjectForm();
-        toast('已删除');
-      } catch (e) {
-        toast('删除失败：' + (e?.message || e));
-      } finally {
-        projectDeleteBtn.disabled = false;
-      }
-    });
-  }
-
-  // Progress slider live label.
-  projectProgressEl.addEventListener('input', () => {
-    projectProgressValueEl.textContent = projectProgressEl.value + '%';
-  });
-
-  // Status → progress nudges.
-  projectStatusEl.addEventListener('change', () => {
-    const s = projectStatusEl.value;
-    if (s === '已完成') {
-      projectProgressEl.value = '100';
-      projectProgressValueEl.textContent = '100%';
-    } else if (s === '未开始') {
-      if (parseInt(projectProgressEl.value, 10) > 0) {
-        toast('建议把进度设为 0%');
-      }
-    }
-  });
-
-  projectStartEl.addEventListener('change', validateProjectDates);
-  projectEndEl.addEventListener('change', validateProjectDates);
-
-  document.getElementById('btn-add-project').addEventListener('click', () => openProjectForm(null));
-  document.getElementById('project-form-close').addEventListener('click', attemptCloseProjectForm);
-  document.getElementById('project-form-cancel').addEventListener('click', attemptCloseProjectForm);
-  projectFormSubmitBtn.addEventListener('click', submitProjectForm);
-  projectDeleteBtn.addEventListener('click', deleteProjectFromForm);
-
   // === Clear ===
   document.getElementById('btn-clear').addEventListener('click', () => {
     if (state.length === 0) {
@@ -3982,28 +3105,15 @@
     pageBoardEl.hidden = tab !== 'board';
     pageProgressEl.hidden = tab !== 'progress';
     render();
-    // Entering progress: silently fetch fresh projects (also picks up changes
-    // made by other devices). Re-render once data arrives.
+    // Silently refresh from cloud when entering progress, so the board reflects
+    // any status changes made by other devices since last load.
     if (tab === 'progress') {
-      onEnterProgressTab();
+      refreshFromCloud(true);
     }
     // Restore the per-tab scroll position.
     requestAnimationFrame(() => {
       window.scrollTo({ top: tabScrollPos[tab] || 0, behavior: 'auto' });
     });
-  }
-
-  async function onEnterProgressTab() {
-    setRefreshing(true);
-    try {
-      projects = await cloudListProjects();
-      renderGantt();
-    } catch (e) {
-      toast('加载项目失败：' + (e?.message || e));
-      console.warn('cloudListProjects failed', e);
-    } finally {
-      setRefreshing(false);
-    }
   }
   // Expose globally as a safety net (covers any inline onclick in cached HTML or
   // future hand-added handlers; harmless duplication with the delegation below).
@@ -4036,11 +3146,7 @@
     }
     setRefreshing(true);
     try {
-      if (currentTab === 'progress') {
-        projects = await cloudListProjects();
-      } else {
-        state = await cloudGetAll();
-      }
+      state = await cloudGetAll();
       render();
       if (!silent) toast('已刷新');
     } catch (e) {

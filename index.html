@@ -310,7 +310,8 @@
   }
   .media-add input { display: none; }
 
-  /* === Floating add button === */
+  /* === Floating add button (hidden on progress tab) === */
+  body.on-progress .fab-wrap { display: none; }
   .fab-wrap {
     position: fixed;
     left: 0;
@@ -442,8 +443,13 @@
     transform: translateY(100%);
     transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
     box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.15);
+    /* Same reason as .form-modal: closed sheet must not intercept clicks. */
+    pointer-events: none;
   }
-  .sheet.open { transform: translateY(0); }
+  .sheet.open {
+    transform: translateY(0);
+    pointer-events: auto;
+  }
   .sheet h3 {
     font-family: var(--serif);
     font-weight: 500;
@@ -506,8 +512,14 @@
     flex-direction: column;
     box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
     overflow: hidden;
+    /* Closed modal must not intercept clicks (critical on desktop centered mode where
+       the closed modal still sits at the viewport center with opacity 0). */
+    pointer-events: none;
   }
-  .form-modal.open { transform: translateY(0); }
+  .form-modal.open {
+    transform: translateY(0);
+    pointer-events: auto;
+  }
 
   .form-modal-head {
     flex-shrink: 0;
@@ -3542,6 +3554,14 @@
   projectFormSubmitBtn.addEventListener('click', submitProjectForm);
   projectDeleteBtn.addEventListener('click', deleteProjectFromForm);
 
+  // Expose key form actions to window as a safety net (parallel to the document-
+  // level delegation higher up). Belt and braces — Bug 1/2 root cause is unclear,
+  // so we cover all routes: direct binding + delegation + global handle.
+  window.openForm = openForm;
+  window.openProjectForm = openProjectForm;
+  window.attemptCloseForm = attemptCloseForm;
+  window.attemptCloseProjectForm = attemptCloseProjectForm;
+
   // === Clear ===
   document.getElementById('btn-clear').addEventListener('click', () => {
     if (state.length === 0) {
@@ -3981,6 +4001,10 @@
     });
     pageBoardEl.hidden = tab !== 'board';
     pageProgressEl.hidden = tab !== 'progress';
+    // Hide the bottom FAB on the progress tab — gantt has its own "+ 新增项目"
+    // button at the top of the page, and the feedback FAB only makes sense
+    // on the board tab.
+    document.body.classList.toggle('on-progress', tab === 'progress');
     render();
     // Entering progress: silently fetch fresh projects (also picks up changes
     // made by other devices). Re-render once data arrives.
@@ -4009,12 +4033,34 @@
   // future hand-added handlers; harmless duplication with the delegation below).
   window.switchTab = switchTab;
 
-  // Use document-level event delegation. Works regardless of when buttons are
-  // parsed/rendered, and survives any future re-render of the tab bar.
+  // Document-level event delegation for primary actions. This is defensive:
+  // direct addEventListener bindings further down should also work, but going
+  // through delegation guarantees clicks still fire even if:
+  //   - the script failed somewhere mid-execution before reaching the binding,
+  //   - the element was re-rendered after binding,
+  //   - a cached older HTML version is still being served.
   document.addEventListener('click', (e) => {
-    const btn = e.target.closest && e.target.closest('#tab-bar .tab-btn');
-    if (btn && btn.dataset && btn.dataset.tab) {
-      switchTab(btn.dataset.tab);
+    if (!e.target || !e.target.closest) return;
+    // Tab switching
+    const tabBtn = e.target.closest('#tab-bar .tab-btn');
+    if (tabBtn && tabBtn.dataset && tabBtn.dataset.tab) {
+      switchTab(tabBtn.dataset.tab);
+      return;
+    }
+    // Open the project (gantt) form — explicitly do NOT call openForm here.
+    if (e.target.closest('#btn-add-project')) {
+      if (typeof openProjectForm === 'function') openProjectForm(null);
+      return;
+    }
+    // Close / cancel — feedback form
+    if (e.target.closest('#form-close, #form-cancel')) {
+      if (typeof attemptCloseForm === 'function') attemptCloseForm();
+      return;
+    }
+    // Close / cancel — project form
+    if (e.target.closest('#project-form-close, #project-form-cancel')) {
+      if (typeof attemptCloseProjectForm === 'function') attemptCloseProjectForm();
+      return;
     }
   });
 
